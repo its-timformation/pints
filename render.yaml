@@ -1,0 +1,26 @@
+# Render Blueprint — auto-provisions the service from this repo.
+# https://render.com/docs/blueprint-spec
+#
+# When you click "New +" → "Blueprint" in the Render dashboard and connect
+# this repo, Render reads this file and creates the service automatically.
+
+services:
+  - type: web
+    name: pints-du-soleil
+    runtime: docker
+    region: frankfurt          # closest EU region; "oregon" or "ohio" for US
+    plan: free                 # 512MB RAM, 0.1 CPU, sleeps after 15min idle
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    autoDeploy: true           # redeploy on every push to main
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000           # Render's default port for web services
+      - key: DATABASE_URL
+        sync: false            # set manually in the Render dashboard
+      - key: DATABASE_AUTH_TOKEN
+        sync: false            # set manually in the Render dashboard
+      - key: ADMIN_PIN
+        sync: false            # 6-digit PIN; set in the Render dashboard

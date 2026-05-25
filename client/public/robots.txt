@@ -1,0 +1,5 @@
+# Block all crawlers while the site is in testing.
+# When you're ready to be indexed by search engines, change "Disallow: /"
+# to "Allow: /" (or just delete this file).
+User-agent: *
+Disallow: /

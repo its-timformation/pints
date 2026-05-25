@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0A0908" />
+    <title>Pints du Soleil — Après index</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script>
+      // Console & error capture for Capacity iframe
+      (function () {
+        var orig = { log: console.log, error: console.error, warn: console.warn, info: console.info };
+        function intercept(type) {
+          return function () {
+            orig[type].apply(console, arguments);
+            try {
+              var args = Array.prototype.slice.call(arguments);
+              window.parent.postMessage({
+                type: "console",
+                logType: type,
+                message: args.map(function (a) {
+                  try { return typeof a === "object" ? JSON.stringify(a) : String(a); }
+                  catch (e) { return String(a); }
+                }).join(" ")
+              }, "*");
+            } catch (e) {}
+          };
+        }
+        console.log = intercept("log");
+        console.error = intercept("error");
+        console.warn = intercept("warn");
+        console.info = intercept("info");
+
+        window.addEventListener("error", function (event) {
+          window.parent.postMessage({
+            type: "iframe-error",
+            error: {
+              message: event.message,
+              filename: event.filename,
+              lineno: event.lineno,
+            },
+          }, "*");
+        });
+        window.addEventListener("unhandledrejection", function (event) {
+          window.parent.postMessage({
+            type: "iframe-error",
+            error: { message: String(event.reason) },
+          }, "*");
+        });
+      })();
+    </script>
+    <meta property="og:url" content="https://ski-bar-beer-price-tracker.capacity.studio" />
+    <meta name="twitter:url" content="https://ski-bar-beer-price-tracker.capacity.studio" />
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
