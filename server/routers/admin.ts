@@ -4,14 +4,14 @@ import { bars, drinks, deals, submissions, barReports, editorsPick } from "../..
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { rateLimit } from "../rateLimit";
+import { rateLimitOrSkip } from "../rateLimit";
 import { resolveGoogleMapsLink } from "../utils/extractMapCoords";
 
 export const adminRouter = router({
   resolveMapLink: publicProcedure
     .input(z.object({ url: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const limit = rateLimit(`mapslink:${ctx.ip}`, { windowMs: 60 * 60 * 1000, max: 20 });
+      const limit = rateLimitOrSkip(`mapslink:${ctx.ip}`, { windowMs: 60 * 60 * 1000, max: 200 }, true);
       if (!limit.allowed) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many requests" });
       try {
         return await resolveGoogleMapsLink(input.url);
