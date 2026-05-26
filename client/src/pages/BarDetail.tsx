@@ -67,11 +67,20 @@ export default function BarDetail() {
             <div className="text-meta opacity-90">{bar.area?.toUpperCase()}</div>
             {bar.address && <div className="text-meta opacity-80 mt-1">{bar.address.toUpperCase()}</div>}
           </div>
-          <div className={`px-2.5 py-1 ${openState.open ? "bg-[var(--color-ink)] text-[var(--color-verified)]" : "bg-[var(--color-ink)] text-[var(--color-paper)] opacity-55"}`}>
-            <span className="text-meta flex items-center gap-1.5">
-              <span className={`inline-block w-1.5 h-1.5 rounded-full ${openState.open ? "bg-[var(--color-verified)]" : "bg-[var(--color-paper)]"}`} />
-              {openState.open ? `OPEN UNTIL ${openState.closesAt}` : `OPENS ${openState.opensAt ?? "—"}`}
-            </span>
+          <div className={`px-2.5 py-1.5 ${openState.open
+            ? "bg-[var(--color-ink)] text-[var(--color-verified)]"
+            : "bg-[var(--color-ink)] text-[var(--color-paper)] opacity-70"}`}>
+            <div className="text-meta flex items-center gap-1.5">
+              <span className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                openState.open ? "bg-[var(--color-verified)]" : "bg-[var(--color-paper)] opacity-50"
+              }`} />
+              {openState.open ? "OPEN NOW" : "CLOSED"}
+            </div>
+            {bar.openingHours && (
+              <div className="text-meta opacity-70 mt-0.5">
+                {bar.openingHours.replace('-', ' – ')}
+              </div>
+            )}
           </div>
         </div>
         {bar.rating && (
