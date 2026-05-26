@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight, X } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { useAppStore, convertPrice, formatPrice, isOpenNow, distanceKm } from "../lib/store";
@@ -16,8 +16,15 @@ interface Props {
  * Guinness. Type-only banner — no glass illustration.
  */
 export function GuinnessSheet({ open, onClose, userLocation }: Props) {
+  const navigate = useNavigate();
   const { currency } = useAppStore();
   const { data: allBars, isLoading } = trpc.bars.getAllWithDetails.useQuery(undefined, { enabled: open });
+
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const dragStartY = useRef<number | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   // Close on escape key
   useEffect(() => {
@@ -34,6 +41,72 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
       return () => { document.body.style.overflow = ""; };
     }
   }, [open]);
+
+  // Reset drag state when sheet closes
+  useEffect(() => {
+    if (!open) {
+      setDragOffset(0);
+      setIsDragging(false);
+      setExpanded(false);
+    }
+  }, [open]);
+
+  // Window-level mouse listeners while dragging (for desktop)
+  useEffect(() => {
+    if (!isDragging) return;
+    const onMove = (e: MouseEvent) => {
+      if (dragStartY.current === null) return;
+      setDragOffset(e.clientY - dragStartY.current);
+    };
+    const onUp = (e: MouseEvent) => {
+      if (dragStartY.current === null) return;
+      const offset = e.clientY - dragStartY.current;
+      const sheetH = sheetRef.current?.offsetHeight ?? window.innerHeight * 0.6;
+      if (offset > sheetH * 0.3) {
+        onClose();
+      } else if (offset < -50) {
+        setExpanded(true);
+      }
+      dragStartY.current = null;
+      setDragOffset(0);
+      setIsDragging(false);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [isDragging, onClose]);
+
+  function onTouchStart(e: React.TouchEvent) {
+    dragStartY.current = e.touches[0].clientY;
+    setIsDragging(true);
+  }
+
+  function onTouchMove(e: React.TouchEvent) {
+    if (dragStartY.current === null) return;
+    setDragOffset(e.touches[0].clientY - dragStartY.current);
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    if (dragStartY.current === null) return;
+    const offset = e.changedTouches[0].clientY - dragStartY.current;
+    const sheetH = sheetRef.current?.offsetHeight ?? window.innerHeight * 0.6;
+    if (offset > sheetH * 0.3) {
+      onClose();
+    } else if (offset < -50) {
+      setExpanded(true);
+    }
+    dragStartY.current = null;
+    setDragOffset(0);
+    setIsDragging(false);
+  }
+
+  function onMouseDown(e: React.MouseEvent) {
+    dragStartY.current = e.clientY;
+    setIsDragging(true);
+  }
 
   const nearbyGuinnessBars = useMemo(() => {
     if (!allBars) return [];
@@ -54,17 +127,34 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
 
   if (!open) return null;
 
+  const sheetHeight = expanded ? "90vh" : "60vh";
+
   return (
     <div className="fixed inset-0 z-[90] flex flex-col" role="dialog" aria-label="Nearest Guinness">
       {/* Dimmed backdrop */}
       <button className="absolute inset-0 bg-[var(--color-ink)] opacity-70" onClick={onClose} aria-label="Close" />
 
       {/* Sheet */}
-      <div className="relative mt-auto bg-[var(--color-paper)] text-[var(--color-ink)] sheet-enter max-h-[85vh] flex flex-col">
+      <div
+        ref={sheetRef}
+        className="relative mt-auto bg-[var(--color-paper)] text-[var(--color-ink)] sheet-enter flex flex-col"
+        style={{
+          height: sheetHeight,
+          transform: `translateY(${dragOffset}px)`,
+          transition: isDragging ? "none" : "transform 0.3s ease, height 0.3s ease",
+        }}
+      >
         {/* Drag handle */}
-        <button onClick={onClose} className="self-center mt-3 mb-1 py-2 px-6" aria-label="Close panel">
-          <div className="w-10 h-1 bg-[var(--color-ink)] opacity-25 rounded" />
-        </button>
+        <div
+          className="self-center mt-3 mb-1 py-3 px-8 cursor-grab touch-none select-none"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          onMouseDown={onMouseDown}
+          aria-label="Drag to resize or dismiss"
+        >
+          <div className="w-10 h-1 bg-[var(--color-ink)] opacity-25 rounded-full" />
+        </div>
 
         {/* Header */}
         <div className="px-5 pb-3 flex items-start justify-between gap-4">
@@ -78,7 +168,7 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
         </div>
 
         {/* Bar list */}
-        <div className="flex-1 overflow-y-auto pb-safe">
+        <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <LoadingMessage surface="guinness" className="!text-[var(--color-ink)]" />
           ) : nearbyGuinnessBars.length === 0 ? (
@@ -118,6 +208,16 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
               })}
             </ul>
           )}
+        </div>
+
+        {/* Footer */}
+        <div className="shrink-0">
+          <button
+            onClick={() => { onClose(); navigate("/list", { state: { guinnessFilter: true } }); }}
+            className="w-full bg-[var(--color-ink)] text-[var(--color-paper)] py-4 font-display uppercase"
+          >
+            VIEW ALL GUINNESS BARS →
+          </button>
         </div>
       </div>
     </div>

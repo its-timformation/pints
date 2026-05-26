@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChevronRight, Search } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { useAppStore, convertPrice, formatPrice, isOpenNow } from "../lib/store";
@@ -10,6 +10,8 @@ type SortMode = "name" | "price" | "area";
 export default function ListPage() {
   const { currency } = useAppStore();
   const { data: barsWithDetails, isLoading } = trpc.bars.getAllWithDetails.useQuery();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [query, setQuery] = useState("");
   const [openOnly, setOpenOnly] = useState(false);
@@ -17,6 +19,14 @@ export default function ListPage() {
   const [guinnessOnly, setGuinnessOnly] = useState(false);
   const [areaFilter, setAreaFilter] = useState<string | null>(null);
   const [sort, setSort] = useState<SortMode>("name");
+
+  useEffect(() => {
+    if ((location.state as any)?.guinnessFilter) {
+      setGuinnessOnly(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const areas = useMemo(() => {
     const set = new Set<string>();
@@ -62,7 +72,11 @@ export default function ListPage() {
     let list = [...enriched];
     if (query.trim()) {
       const q = query.toLowerCase();
-      list = list.filter(b => b.name.toLowerCase().includes(q) || b.area?.toLowerCase().includes(q));
+      list = list.filter(b =>
+        b.name.toLowerCase().includes(q) ||
+        b.area?.toLowerCase().includes(q) ||
+        (b.drinks ?? []).some(d => d.name.toLowerCase().includes(q))
+      );
     }
     if (openOnly) list = list.filter(b => b.openState.open);
     if (happyOnly) list = list.filter(b => b.hasActiveHappy);
@@ -98,7 +112,7 @@ export default function ListPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search bars or resorts"
+            placeholder="Search bars, areas or drinks"
             className="w-full bg-transparent py-2.5 focus:outline-none placeholder:text-[var(--color-paper)] placeholder:opacity-40"
           />
         </div>

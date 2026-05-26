@@ -130,7 +130,7 @@ export default function SubmissionsQueue({ onBack }: Props) {
 function FilterPill({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className={`shrink-0 px-3 py-1.5 text-meta uppercase !min-h-0 ${active ? "bg-[var(--color-paper)] bg-opacity-10 text-[var(--color-paper)]" : "text-[var(--color-paper)] opacity-55"}`}>
+      className={`shrink-0 px-3 py-1.5 text-meta uppercase !min-h-0 ${active ? "bg-[var(--color-ink)] text-[var(--color-paper)]" : "text-[var(--color-paper)] opacity-55"}`}>
       {children}
     </button>
   );
