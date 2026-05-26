@@ -68,7 +68,7 @@ function Header({ onWordmarkTap }: { onWordmarkTap: () => void; }) {
   return (
     <header className="sticky top-0 z-50 bg-[var(--color-ink)] hairline-b">
       <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-        <button onClick={() => { onWordmarkTap(); navigate("/"); }} className="!min-h-0 group" aria-label="Pints du Soleil home">
+        <button onClick={() => { onWordmarkTap(); navigate("/"); }} className="group" aria-label="Pints du Soleil home">
           <span className="font-display text-xl uppercase leading-none text-[var(--color-paper)] tracking-wide">
             {stoutsMode ? "STOUTS" : "PINTS"}<span className="text-[var(--color-blaze)]">·</span>DU<span className="text-[var(--color-blaze)]">·</span>SOLEIL
           </span>
@@ -120,7 +120,7 @@ function BottomNav() {
           const active = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
           return (
             <Link key={item.to} to={item.to}
-              className="relative flex flex-col items-center justify-center py-3 min-h-[60px]"
+              className="relative flex flex-col items-center justify-center py-3 min-h-[60px] w-full"
               aria-current={active ? "page" : undefined}
             >
               <span className={active ? "text-[var(--color-blaze)]" : "text-[var(--color-paper)] opacity-60"}>

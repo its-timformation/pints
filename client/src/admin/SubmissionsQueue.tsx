@@ -30,7 +30,7 @@ export default function SubmissionsQueue({ onBack }: Props) {
   return (
     <div className="grain-ink min-h-full pb-6">
       <div className="px-4 py-3 flex items-center justify-between hairline-b">
-        <button onClick={onBack} className="flex items-center gap-1.5 text-meta opacity-70 !min-h-0">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-meta opacity-70">
           <ChevronLeft size={16} strokeWidth={1.6} />
           ADMIN
         </button>
@@ -102,16 +102,16 @@ export default function SubmissionsQueue({ onBack }: Props) {
                 </div>
 
                 <div className="flex gap-1.5 mt-3">
-                  <button onClick={() => resolve(sub.id, "reject")} className="flex-1 border border-[var(--color-rule)] py-2.5">
+                  <button onClick={() => resolve(sub.id, "reject")} className="flex-1 border border-[var(--color-rule)] min-h-[44px]">
                     <span className="text-meta text-[var(--color-blaze)] flex items-center justify-center gap-1.5">
                       <X size={12} strokeWidth={2} />
                       REJECT
                     </span>
                   </button>
-                  <button onClick={() => resolve(sub.id, "approve")} className="flex-1 border border-[var(--color-paper)] py-2.5">
+                  <button onClick={() => resolve(sub.id, "approve")} className="flex-1 border border-[var(--color-paper)] min-h-[44px]">
                     <span className="text-meta flex items-center justify-center">APPROVE</span>
                   </button>
-                  <button onClick={() => resolve(sub.id, "approve_verified")} className="flex-[1.2] bg-[var(--color-blaze)] text-[var(--color-paper)] py-2.5">
+                  <button onClick={() => resolve(sub.id, "approve_verified")} className="flex-[1.2] bg-[var(--color-blaze)] text-[var(--color-paper)] min-h-[44px]">
                     <span className="text-meta flex items-center justify-center gap-1.5">
                       <Check size={12} strokeWidth={2.2} />
                       VERIFY
@@ -130,7 +130,7 @@ export default function SubmissionsQueue({ onBack }: Props) {
 function FilterPill({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className={`shrink-0 px-3 py-1.5 text-meta uppercase !min-h-0 ${active ? "bg-[var(--color-ink)] text-[var(--color-paper)] border border-[var(--color-paper)] opacity-100" : "bg-transparent text-[var(--color-paper)] border border-[var(--color-rule)] opacity-60"}`}>
+      className={`shrink-0 px-4 py-2.5 min-h-[44px] text-meta uppercase ${active ? "bg-[var(--color-ink)] text-[var(--color-paper)] border border-[var(--color-paper)]" : "bg-transparent text-[var(--color-paper)] border border-[var(--color-rule)] opacity-60"}`}>
       {children}
     </button>
   );

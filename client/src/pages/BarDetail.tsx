@@ -44,15 +44,15 @@ export default function BarDetail() {
     <div className="grain-ink min-h-full">
       {/* Back row */}
       <div className="px-4 py-3 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-meta opacity-70 !min-h-0" aria-label="Go back">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-meta opacity-70" aria-label="Go back">
           <ChevronLeft size={16} strokeWidth={1.6} />
           BACK
         </button>
         <div className="flex items-center gap-1">
-          <button onClick={share} className="p-2 !min-h-0" aria-label="Share">
+          <button onClick={share} className="p-2" aria-label="Share">
             <Share2 size={16} strokeWidth={1.6} className="opacity-70" />
           </button>
-          <button onClick={() => setReportOpen(true)} className="p-2 !min-h-0" aria-label="Report a problem">
+          <button onClick={() => setReportOpen(true)} className="p-2" aria-label="Report a problem">
             <Flag size={16} strokeWidth={1.6} className="opacity-70" />
           </button>
         </div>
@@ -116,7 +116,7 @@ export default function BarDetail() {
               const stale = isVerifiedStale(drink.verifiedAt);
               const displayPrice = formatPrice(convertPrice(drink.price, drink.currency as any, currency), currency);
               return (
-                <li key={drink.id} className="hairline-b-soft last:border-b-0 py-3 flex items-center gap-3">
+                <li key={drink.id} className="hairline-b-soft last:border-b-0 py-4 flex items-center gap-3">
                   <span className="num-rail text-[var(--color-blaze)] w-6 shrink-0">{String(i+1).padStart(2,"0")}</span>
                   <div className="flex-1 min-w-0">
                     <div className="font-display text-base uppercase text-[var(--color-paper)] truncate">{drink.name}</div>
@@ -130,7 +130,7 @@ export default function BarDetail() {
                   <div className="font-display text-lg text-[var(--color-sun)]">{displayPrice}</div>
                   <Link
                     to={`/submit/${bar.id}?drink=${encodeURIComponent(drink.name)}&size=${encodeURIComponent(drink.size ?? "")}&update=1`}
-                    className="shrink-0 border border-[var(--color-rule)] text-meta uppercase px-2 py-1 hover:border-[var(--color-blaze)] transition-colors !min-h-0"
+                    className="shrink-0 border border-[var(--color-rule)] text-meta uppercase px-3 py-2 min-h-[44px] hover:border-[var(--color-blaze)] transition-colors"
                     aria-label={`Suggest update for ${drink.name}`}
                   >
                     UPDATE PRICE
@@ -169,16 +169,16 @@ export default function BarDetail() {
                   <button
                     key={val}
                     onClick={() => setReportReason(val as any)}
-                    className={`w-full text-left px-3 py-3 border ${reportReason === val ? "bg-[var(--color-ink)] text-[var(--color-paper)] border-[var(--color-ink)]" : "border-[var(--color-rule-paper)]"}`}
+                    className={`w-full text-left px-3 min-h-[44px] border ${reportReason === val ? "bg-[var(--color-ink)] text-[var(--color-paper)] border-[var(--color-ink)]" : "border-[var(--color-rule-paper)]"}`}
                   >
                     <span className="text-meta">{label}</span>
                   </button>
                 ))}
               </div>
-              <button onClick={submitReport} className="w-full mt-4 bg-[var(--color-blaze)] text-[var(--color-paper)] py-3 font-display text-lg uppercase">
+              <button onClick={submitReport} className="w-full mt-4 bg-[var(--color-blaze)] text-[var(--color-paper)] py-4 font-display text-lg uppercase min-h-[44px]">
                 SEND REPORT
               </button>
-              <button onClick={() => setReportOpen(false)} className="w-full mt-2 text-meta opacity-55">
+              <button onClick={() => setReportOpen(false)} className="w-full mt-2 text-meta opacity-55 py-4 min-h-[44px]">
                 CANCEL
               </button>
             </div>

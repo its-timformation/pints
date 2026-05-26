@@ -105,7 +105,7 @@ export default function ListPage() {
 
       {/* Search */}
       <div className="px-4 mb-3">
-        <div className="flex items-center gap-2 border border-[var(--color-rule)] px-3">
+        <div className="flex items-center gap-2 border border-[var(--color-rule)] px-3 min-h-[44px]">
           <Search size={16} strokeWidth={1.6} className="opacity-50 shrink-0" />
           <input
             type="search"
@@ -117,26 +117,31 @@ export default function ListPage() {
         </div>
       </div>
 
-      {/* Filter pills */}
-      <div className="px-4 mb-1 flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-        <Pill active={openOnly} onClick={() => setOpenOnly(!openOnly)}>OPEN NOW</Pill>
-        <Pill active={happyOnly} onClick={() => setHappyOnly(!happyOnly)}>HAPPY HOUR</Pill>
-        <Pill active={guinnessOnly} onClick={() => setGuinnessOnly(!guinnessOnly)}>POURS GUINNESS</Pill>
-        {areas.map(a => (
-          <Pill key={a} active={areaFilter === a} onClick={() => setAreaFilter(areaFilter === a ? null : a)}>
-            {a.toUpperCase()}
-          </Pill>
-        ))}
+      {/* Filter pills — horizontally scrollable with fade-right hint */}
+      <div className="relative mb-1">
+        <div className="px-4 flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+          <Pill active={openOnly} onClick={() => setOpenOnly(!openOnly)}>OPEN NOW</Pill>
+          <Pill active={happyOnly} onClick={() => setHappyOnly(!happyOnly)}>HAPPY HOUR</Pill>
+          <Pill active={guinnessOnly} onClick={() => setGuinnessOnly(!guinnessOnly)}>POURS GUINNESS</Pill>
+          {areas.map(a => (
+            <Pill key={a} active={areaFilter === a} onClick={() => setAreaFilter(areaFilter === a ? null : a)}>
+              {a.toUpperCase()}
+            </Pill>
+          ))}
+        </div>
+        {/* Right-edge fade to hint scrollability */}
+        <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-[var(--color-ink)] to-transparent" />
       </div>
 
-      {/* Sort */}
-      <div className="px-4 pb-2 flex justify-end">
-        <select value={sort} onChange={e => setSort(e.target.value as SortMode)}
-          className="bg-transparent text-meta opacity-70 border-none focus:outline-none uppercase">
-          <option value="name" className="bg-[var(--color-ink)]">SORT · NAME</option>
-          <option value="price" className="bg-[var(--color-ink)]">SORT · PRICE</option>
-          <option value="area" className="bg-[var(--color-ink)]">SORT · AREA</option>
-        </select>
+      {/* Sort pills */}
+      <div className="px-4 pb-3 flex gap-2">
+        <span className="text-meta opacity-40 self-center shrink-0">SORT</span>
+        {(["name","price","area"] as SortMode[]).map(s => (
+          <button key={s} onClick={() => setSort(s)}
+            className={`px-4 py-2 min-h-[44px] text-meta uppercase whitespace-nowrap ${sort === s ? "bg-[var(--color-blaze)] text-[var(--color-paper)]" : "border border-[var(--color-rule)] opacity-70"}`}>
+            {s.toUpperCase()}
+          </button>
+        ))}
       </div>
 
       {/* List */}
@@ -173,7 +178,7 @@ export default function ListPage() {
 function Pill({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className={`shrink-0 px-3 py-1.5 text-meta uppercase whitespace-nowrap !min-h-0 ${active ? "bg-[var(--color-blaze)] text-[var(--color-paper)]" : "border border-[var(--color-rule)] opacity-70"}`}>
+      className={`shrink-0 px-4 py-2.5 min-h-[44px] text-meta uppercase whitespace-nowrap ${active ? "bg-[var(--color-blaze)] text-[var(--color-paper)]" : "border border-[var(--color-rule)] opacity-70"}`}>
       {children}
     </button>
   );

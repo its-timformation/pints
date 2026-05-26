@@ -42,7 +42,7 @@ export default function DrinksCatalogue({ onBack }: Props) {
   return (
     <div className="grain-ink min-h-full pb-6">
       <div className="px-4 py-3 flex items-center justify-between hairline-b">
-        <button onClick={onBack} className="flex items-center gap-1.5 text-meta opacity-70 !min-h-0">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-meta opacity-70">
           <ChevronLeft size={16} strokeWidth={1.6} />
           ADMIN
         </button>
@@ -81,7 +81,7 @@ export default function DrinksCatalogue({ onBack }: Props) {
           const verified = drink.isVerified;
           const stale = isVerifiedStale(drink.verifiedAt);
           return (
-            <li key={`${drink.id}`} className="hairline-b-soft flex items-center gap-3 py-2.5">
+            <li key={`${drink.id}`} className="hairline-b-soft flex items-center gap-3 py-2">
               <div className="flex-1 min-w-0">
                 <div className="font-display text-base uppercase truncate">{drink.name}</div>
                 <div className="text-meta opacity-60 mt-0.5">
@@ -89,15 +89,19 @@ export default function DrinksCatalogue({ onBack }: Props) {
                   {drink.size ? ` · ${drink.size.toUpperCase()}` : ""}
                 </div>
               </div>
-              <div className="font-display text-base text-[var(--color-sun)]">{drink.price.toFixed(2)} {drink.currency}</div>
+              <div className="font-display text-base text-[var(--color-sun)] shrink-0">{drink.price.toFixed(2)} {drink.currency}</div>
               <button
                 onClick={() => toggle(drink.id, verified)}
-                className={`shrink-0 w-12 h-7 border flex items-center justify-end px-1 !min-h-0 transition-colors ${verified ? "bg-[var(--color-verified)] border-[var(--color-verified)]" : "border-[var(--color-rule)]"}`}
+                className={`shrink-0 px-3 min-h-[44px] border text-meta transition-colors ${
+                  verified && !stale
+                    ? "bg-[var(--color-verified)] border-[var(--color-verified)] text-[var(--color-ink)]"
+                    : verified && stale
+                    ? "bg-[var(--color-stale)] border-[var(--color-stale)] text-[var(--color-ink)]"
+                    : "border-[var(--color-rule)] text-[var(--color-paper)] opacity-55"
+                }`}
                 aria-label={verified ? "Remove verification" : "Verify drink"}
               >
-                <div className={`w-5 h-5 ${verified ? "bg-[var(--color-ink)]" : "bg-[var(--color-paper)] opacity-50"} ${verified ? "" : "mr-auto"}`}>
-                  {verified && stale && <span className="block text-[8px] text-[var(--color-sun)] text-center pt-0.5">!</span>}
-                </div>
+                {verified && !stale ? "VERIFIED" : verified && stale ? "STALE" : "UNVERIFIED"}
               </button>
             </li>
           );

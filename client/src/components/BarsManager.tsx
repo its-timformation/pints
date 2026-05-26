@@ -14,7 +14,7 @@ export default function BarsManager({ onBack }: Props) {
   return (
     <div className="grain-ink min-h-full pb-8">
       <div className="px-4 py-3 flex items-center justify-between hairline-b">
-        <button onClick={onBack} className="flex items-center gap-1.5 text-meta opacity-70 !min-h-0">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-meta opacity-70">
           <ChevronLeft size={16} strokeWidth={1.6} />
           ADMIN
         </button>
@@ -31,7 +31,7 @@ export default function BarsManager({ onBack }: Props) {
           <div key={bar.id} className="border border-[var(--color-rule)]">
             <div className="flex justify-between items-center p-3">
               <button
-                className="flex-1 text-left !min-h-0"
+                className="flex-1 text-left min-h-[44px] py-1"
                 onClick={() => setExpandedBar(expandedBar === bar.id ? null : bar.id)}
               >
                 <div className="font-display text-base uppercase flex items-center gap-2">
@@ -45,7 +45,7 @@ export default function BarsManager({ onBack }: Props) {
               <button
                 onClick={() => { if (confirm('Delete bar and all its drinks/deals?')) deleteBar.mutate({ id: bar.id }); }}
                 disabled={deleteBar.isPending}
-                className="p-2 opacity-60 hover:opacity-100 !min-h-0"
+                className="p-2 min-h-[44px] min-w-[44px] opacity-60 hover:opacity-100"
                 aria-label="Delete bar"
               >
                 <Trash2 size={14} strokeWidth={1.6} />
@@ -105,7 +105,7 @@ function AreaTypeahead({ value, onChange }: { value: string; onChange: (v: strin
         <ul className="absolute z-30 left-0 right-0 bg-[var(--color-ink)] border border-[var(--color-rule)] max-h-40 overflow-y-auto">
           {filtered.map(a => (
             <li key={a}>
-              <button onClick={() => { setQuery(a); onChange(a); setOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-[var(--color-ink-card)] !min-h-0">
+              <button onClick={() => { setQuery(a); onChange(a); setOpen(false); }} className="w-full text-left px-3 py-2.5 min-h-[44px] hover:bg-[var(--color-ink-card)]">
                 <span className="text-meta">{a.toUpperCase()}</span>
               </button>
             </li>
@@ -172,7 +172,7 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
       <div className="bg-[var(--color-ink-soft)] bg-opacity-50 p-3 border border-[var(--color-rule)]">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-eyebrow opacity-70">BAR DETAILS</h3>
-          <button onClick={() => setEditingBar(!editingBar)} className="text-meta text-[var(--color-blaze)] !min-h-0 flex items-center gap-1">
+          <button onClick={() => setEditingBar(!editingBar)} className="text-meta text-[var(--color-blaze)] min-h-[44px] flex items-center gap-1 px-2">
             {editingBar ? <X size={12} /> : <Edit2 size={12} />} {editingBar ? 'CANCEL' : 'EDIT'}
           </button>
         </div>
@@ -180,7 +180,7 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
         {editingBar ? (
           <div className="space-y-2">
             <input value={barForm.name} onChange={e => setBarForm({ ...barForm, name: e.target.value })}
-              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2" placeholder="Name" />
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-3 min-h-[44px]" placeholder="Name" />
             <AreaTypeahead value={barForm.area || ""} onChange={v => setBarForm({ ...barForm, area: v })} />
             <div className="flex gap-2">
               <div className="flex-1">
@@ -188,7 +188,7 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
                 <select
                   value={openTime}
                   onChange={e => setBarForm({ ...barForm, openingHours: `${e.target.value}-${closeTime}` })}
-                  className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2"
+                  className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-3 min-h-[44px]"
                 >
                   {TIME_OPTIONS.map(t => <option key={t} value={t} className="bg-[var(--color-ink)]">{t}</option>)}
                 </select>
@@ -198,14 +198,14 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
                 <select
                   value={closeTime}
                   onChange={e => setBarForm({ ...barForm, openingHours: `${openTime}-${e.target.value}` })}
-                  className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2"
+                  className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-3 min-h-[44px]"
                 >
                   {TIME_OPTIONS.map(t => <option key={t} value={t} className="bg-[var(--color-ink)]">{t}</option>)}
                 </select>
               </div>
             </div>
             <select value={barForm.type} onChange={e => setBarForm({ ...barForm, type: e.target.value })}
-              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2">
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-3 min-h-[44px]">
               {["bar","pub","restaurant-bar","slope-side","club"].map(t => <option key={t} value={t} className="bg-[var(--color-ink)]">{t}</option>)}
             </select>
 
@@ -323,30 +323,41 @@ function DrinkRow({ drink, onDelete, onUpdate }: any) {
 
   if (editing) {
     return (
-      <div className="flex gap-1.5 items-center p-2 bg-[var(--color-ink-soft)] border border-[var(--color-rule)]">
+      <div className="space-y-2 p-2 bg-[var(--color-ink-soft)] border border-[var(--color-rule)]">
         <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-          className="bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-2 py-1 flex-1 min-w-0 text-sm" />
-        <input type="number" step="0.01" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })}
-          className="bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-2 py-1 w-16 text-sm" />
-        <label className="flex items-center gap-1 text-meta opacity-70 !min-h-0">
-          <input type="checkbox" checked={form.isVerified} onChange={e => setForm({ ...form, isVerified: e.target.checked })} />
-          VER
+          className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm" placeholder="Drink name" />
+        <div className="flex gap-2">
+          <input type="number" step="0.01" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })}
+            className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm" placeholder="Price" />
+          <span className="text-meta opacity-60 self-center px-2">{form.currency}</span>
+        </div>
+        <label className="flex items-center gap-2 min-h-[44px] cursor-pointer">
+          <input type="checkbox" checked={form.isVerified} onChange={e => setForm({ ...form, isVerified: e.target.checked })} className="w-5 h-5" />
+          <span className="text-meta opacity-70">VERIFIED</span>
         </label>
-        <button onClick={() => updateDrink.mutate({ id: drink.id, name: form.name, price: parseFloat(form.price), currency: form.currency, isVerified: form.isVerified })} className="text-[var(--color-verified)] !min-h-0"><Check size={14} strokeWidth={1.6} /></button>
-        <button onClick={() => setEditing(false)} className="opacity-60 !min-h-0"><X size={14} strokeWidth={1.6} /></button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => updateDrink.mutate({ id: drink.id, name: form.name, price: parseFloat(form.price), currency: form.currency, isVerified: form.isVerified })}
+            className="flex-1 bg-[var(--color-verified)] text-[var(--color-ink)] min-h-[44px] font-display uppercase text-sm"
+          >SAVE</button>
+          <button onClick={() => setEditing(false)} className="flex-1 border border-[var(--color-rule)] min-h-[44px] text-meta uppercase opacity-70">CANCEL</button>
+        </div>
       </div>
     );
   }
   return (
-    <div className="flex justify-between items-center p-2 bg-[var(--color-ink-soft)] bg-opacity-50">
-      <div className="flex items-center gap-2 min-w-0">
-        <span className="font-display text-sm uppercase truncate">{drink.name}</span>
-        <span className="text-meta opacity-65 shrink-0">{drink.price.toFixed(2)} {drink.currency}</span>
-        {drink.isVerified && <span className="text-meta text-[var(--color-verified)] shrink-0">VER</span>}
+    <div className="flex items-center gap-2 p-2 bg-[var(--color-ink-soft)] bg-opacity-50 min-h-[44px]">
+      <div className="flex-1 min-w-0">
+        <span className="font-display text-sm uppercase truncate block">{drink.name}</span>
+        <span className="text-meta opacity-65">{drink.price.toFixed(2)} {drink.currency}{drink.isVerified ? " · VER" : ""}</span>
       </div>
       <div className="flex gap-1 shrink-0">
-        <button onClick={() => setEditing(true)} className="p-1 text-[var(--color-blaze)] !min-h-0"><Edit2 size={12} strokeWidth={1.6} /></button>
-        <button onClick={() => { if (confirm('Delete drink?')) onDelete(); }} className="p-1 opacity-60 !min-h-0"><Trash2 size={12} strokeWidth={1.6} /></button>
+        <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 min-h-[44px] border border-[var(--color-rule)] text-[var(--color-blaze)]">
+          <Edit2 size={12} strokeWidth={1.6} /><span className="text-meta">EDIT</span>
+        </button>
+        <button onClick={() => { if (confirm('Delete drink?')) onDelete(); }} className="flex items-center gap-1.5 px-3 min-h-[44px] border border-[var(--color-rule)] opacity-60 hover:opacity-100 hover:text-[var(--color-blaze)]">
+          <Trash2 size={12} strokeWidth={1.6} /><span className="text-meta">DEL</span>
+        </button>
       </div>
     </div>
   );
@@ -359,31 +370,38 @@ function DealRow({ deal, onDelete, onUpdate }: any) {
 
   if (editing) {
     return (
-      <div className="flex flex-col gap-1.5 p-2 bg-[var(--color-ink-soft)] border border-[var(--color-rule)]">
+      <div className="space-y-2 p-2 bg-[var(--color-ink-soft)] border border-[var(--color-rule)]">
         <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
-          className="bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-2 py-1 text-sm" placeholder="Title" />
-        <div className="flex gap-1.5">
+          className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm" placeholder="Title" />
+        <div className="flex gap-2">
           <input value={form.startTime || ''} onChange={e => setForm({ ...form, startTime: e.target.value })}
-            className="bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-2 py-1 flex-1 text-sm" placeholder="Start" />
+            className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm" placeholder="Start" />
           <input value={form.endTime || ''} onChange={e => setForm({ ...form, endTime: e.target.value })}
-            className="bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-2 py-1 flex-1 text-sm" placeholder="End" />
+            className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm" placeholder="End" />
         </div>
-        <div className="flex justify-end gap-1 mt-1">
-          <button onClick={() => setEditing(false)} className="opacity-60 p-1 !min-h-0"><X size={14} strokeWidth={1.6} /></button>
-          <button onClick={() => updateDeal.mutate({ id: deal.id, title: form.title, type: deal.type, startTime: form.startTime, endTime: form.endTime })} className="text-[var(--color-verified)] p-1 !min-h-0"><Check size={14} strokeWidth={1.6} /></button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => updateDeal.mutate({ id: deal.id, title: form.title, type: deal.type, startTime: form.startTime, endTime: form.endTime })}
+            className="flex-1 bg-[var(--color-verified)] text-[var(--color-ink)] min-h-[44px] font-display uppercase text-sm"
+          >SAVE</button>
+          <button onClick={() => setEditing(false)} className="flex-1 border border-[var(--color-rule)] min-h-[44px] text-meta uppercase opacity-70">CANCEL</button>
         </div>
       </div>
     );
   }
   return (
-    <div className="flex justify-between items-center p-2 bg-[var(--color-ink-soft)] bg-opacity-50">
-      <div className="min-w-0">
+    <div className="flex items-center gap-2 p-2 bg-[var(--color-ink-soft)] bg-opacity-50 min-h-[44px]">
+      <div className="flex-1 min-w-0">
         <span className="font-display text-sm uppercase block truncate">{deal.title}</span>
         {deal.startTime && <span className="text-meta opacity-60">{deal.startTime}–{deal.endTime}</span>}
       </div>
       <div className="flex gap-1 shrink-0">
-        <button onClick={() => setEditing(true)} className="p-1 text-[var(--color-blaze)] !min-h-0"><Edit2 size={12} strokeWidth={1.6} /></button>
-        <button onClick={() => { if (confirm('Delete deal?')) onDelete(); }} className="p-1 opacity-60 !min-h-0"><Trash2 size={12} strokeWidth={1.6} /></button>
+        <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 min-h-[44px] border border-[var(--color-rule)] text-[var(--color-blaze)]">
+          <Edit2 size={12} strokeWidth={1.6} /><span className="text-meta">EDIT</span>
+        </button>
+        <button onClick={() => { if (confirm('Delete deal?')) onDelete(); }} className="flex items-center gap-1.5 px-3 min-h-[44px] border border-[var(--color-rule)] opacity-60 hover:opacity-100 hover:text-[var(--color-blaze)]">
+          <Trash2 size={12} strokeWidth={1.6} /><span className="text-meta">DEL</span>
+        </button>
       </div>
     </div>
   );

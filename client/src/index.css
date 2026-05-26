@@ -170,6 +170,15 @@
     font-family: var(--font-mono);
     font-size: 0.625rem; letter-spacing: 0.1em; text-transform: uppercase;
   }
+
+  /* Accessible tap-target helper */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 /* Leaflet popup theme */
