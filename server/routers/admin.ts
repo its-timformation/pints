@@ -45,11 +45,15 @@ export const adminRouter = router({
       }
 
       async function callPlacesAPI(queries: string[]) {
-        if (!apiKey) return null;
+        if (!apiKey) {
+          console.log('[Places API] No API key found - GOOGLE_PLACES_API_KEY not set');
+          return null;
+        }
+        console.log('[Places API] Key present, trying', queries.length, 'queries');
 
         for (const query of queries) {
           try {
-            console.log('Places API query:', query);
+            console.log('[Places API] Query:', query);
             const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
               method: 'POST',
               headers: {
@@ -70,22 +74,35 @@ export const adminRouter = router({
               signal: AbortSignal.timeout(8000),
             });
 
+            const responseText = await res.text();
+            console.log('[Places API] Status:', res.status);
+            console.log('[Places API] Response:', responseText.slice(0, 1000));
+
             if (!res.ok) {
-              console.error('Places API error:', res.status, await res.text());
+              console.error('[Places API] Error for query:', query, res.status, responseText.slice(0, 300));
               continue;
             }
 
-            const data = await res.json();
+            let data: any;
+            try {
+              data = JSON.parse(responseText);
+            } catch (e) {
+              console.error('[Places API] JSON parse failed:', responseText.slice(0, 200));
+              continue;
+            }
+
             const place = data.places?.[0];
             if (!place) {
-              console.log('No results for query:', query);
+              console.log('[Places API] No places returned for query:', query);
               continue;
             }
 
             const lat = place.location?.latitude;
             const lng = place.location?.longitude;
+            console.log('[Places API] Got place:', place.displayName?.text, 'at', lat, lng);
+
             if (!lat || !lng || lat < 43 || lat > 48 || lng < 4 || lng > 12) {
-              console.log('Coords out of Alps range:', lat, lng);
+              console.log('[Places API] Coords outside Alps region, skipping');
               continue;
             }
 
@@ -102,7 +119,6 @@ export const adminRouter = router({
               }
             }
 
-            console.log('Places API success with query:', query, '→', place.displayName?.text, lat, lng);
             return {
               lat, lng,
               websiteUrl: place.websiteUri ?? null,
@@ -114,15 +130,18 @@ export const adminRouter = router({
               address: place.formattedAddress ?? null,
             };
           } catch (e) {
-            console.error('Places API fetch failed for query:', query, e);
+            console.error('[Places API] Fetch failed for query:', query, e);
           }
         }
+        console.log('[Places API] All queries exhausted, returning null');
         return null;
       }
 
       try {
         const finalUrl = await followRedirect(input.url);
         const placeName = extractPlaceNameFromUrl(finalUrl);
+        console.log('[Maps] finalUrl:', finalUrl.slice(0, 200));
+        console.log('[Maps] placeName:', placeName);
 
         if (apiKey && placeName) {
           const nameVariants = [
