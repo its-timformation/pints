@@ -6,6 +6,103 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
 export const adminRouter = router({
+  resolveMapLink: publicProcedure
+    .input(z.object({ url: z.string() }))
+    .mutation(async ({ input }) => {
+
+      function extractCoordsFromUrl(url: string): { lat: number; lng: number } | null {
+        const at = url.match(/@(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
+        if (at) return { lat: parseFloat(at[1]), lng: parseFloat(at[2]) };
+        const d3 = url.match(/!3d(-?\d{1,3}\.\d{4,}).*?!4d(-?\d{1,3}\.\d{4,})/);
+        if (d3) return { lat: parseFloat(d3[1]), lng: parseFloat(d3[2]) };
+        const q = url.match(/[?&]q=(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
+        if (q) return { lat: parseFloat(q[1]), lng: parseFloat(q[2]) };
+        const ll = url.match(/[?&]ll=(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
+        if (ll) return { lat: parseFloat(ll[1]), lng: parseFloat(ll[2]) };
+        return null;
+      }
+
+      function extractMetaRefresh(html: string): string | null {
+        const meta = html.match(/<meta[^>]+http-equiv=["']refresh["'][^>]+content=["'][^"']*url=([^"'\s>]+)/i);
+        if (meta?.[1]) return meta[1];
+        const meta2 = html.match(/<meta[^>]+content=["'][^"']*url=([^"'\s>]+)[^>]+http-equiv=["']refresh["']/i);
+        if (meta2?.[1]) return meta2[1];
+        const js = html.match(/window\.location\s*=\s*["']([^"']+google\.com\/maps[^"']+)["']/i);
+        if (js?.[1]) return js[1];
+        const js2 = html.match(/window\.location\.href\s*=\s*["']([^"']+google\.com\/maps[^"']+)["']/i);
+        if (js2?.[1]) return js2[1];
+        return null;
+      }
+
+      async function resolveUrl(startUrl: string): Promise<string> {
+        let current = startUrl;
+        for (let hop = 0; hop < 5; hop++) {
+          if (extractCoordsFromUrl(current)) return current;
+          let response: Response;
+          try {
+            response = await fetch(current, {
+              redirect: 'manual',
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+                'Accept': 'text/html,application/xhtml+xml,*/*;q=0.8',
+                'Accept-Language': 'en-GB,en;q=0.9',
+              },
+              signal: AbortSignal.timeout(8000),
+            });
+          } catch {
+            break;
+          }
+          if (response.status >= 300 && response.status < 400) {
+            const loc = response.headers.get('location');
+            if (!loc) break;
+            current = loc.startsWith('http') ? loc : new URL(loc, current).href;
+            continue;
+          }
+          if (response.status === 200) {
+            const html = await response.text();
+            if (extractCoordsFromUrl(response.url)) return response.url;
+            const redirectUrl = extractMetaRefresh(html);
+            if (redirectUrl) {
+              current = redirectUrl.startsWith('http') ? redirectUrl : new URL(redirectUrl, current).href;
+              continue;
+            }
+            const embedded = html.match(/https:\/\/(?:www\.)?google\.com\/maps\/[^"'\s\\]+/);
+            if (embedded?.[0]) {
+              const candidate = embedded[0].replace(/\\u003d/g, '=').replace(/\\u0026/g, '&');
+              if (extractCoordsFromUrl(candidate)) return candidate;
+              current = candidate;
+              continue;
+            }
+            break;
+          }
+          break;
+        }
+        return current;
+      }
+
+      try {
+        const finalUrl = await resolveUrl(input.url);
+        const coords = extractCoordsFromUrl(finalUrl);
+        if (!coords) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Could not find coordinates. Try opening the link in a browser first, then copy the full URL from the address bar and paste that instead.',
+          });
+        }
+        const placeMatch = finalUrl.match(/\/maps\/place\/([^/@?]+)/);
+        const placeName = placeMatch
+          ? decodeURIComponent(placeMatch[1].replace(/\+/g, ' '))
+          : null;
+        return { lat: coords.lat, lng: coords.lng, placeName, finalUrl, websiteUrl: null };
+      } catch (e: any) {
+        if (e instanceof TRPCError) throw e;
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to resolve link: ' + e.message,
+        });
+      }
+    }),
+
   getSubmissions: publicProcedure
     .query(async () => {
       return db.select().from(submissions).orderBy(desc(submissions.createdAt));

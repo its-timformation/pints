@@ -347,25 +347,14 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
   const deleteDrink = trpc.admin.deleteDrink.useMutation({ onSuccess: () => refetch() });
   const deleteDeal = trpc.admin.deleteDeal.useMutation({ onSuccess: () => refetch() });
   const updateBar = trpc.admin.updateBar.useMutation({ onSuccess: () => { refetch(); onUpdate(); } });
+  const resolveMap = trpc.admin.resolveMapLink.useMutation();
 
   const [editingBar, setEditingBar] = useState(false);
   const [barForm, setBarForm] = useState(barData);
   const [uploading, setUploading] = useState(false);
-  const [mapStep, setMapStep] = useState<'idle' | 'waiting_full_url' | 'success' | 'error'>('idle');
+  const [mapStep, setMapStep] = useState<'idle' | 'resolving' | 'success' | 'error'>('idle');
   const [mapInput, setMapInput] = useState('');
   const [mapMessage, setMapMessage] = useState('');
-
-  function extractCoordsFromUrl(url: string): { lat: number; lng: number } | null {
-    const at = url.match(/@(-?\d{1,3}\.\d{5,}),(-?\d{1,3}\.\d{5,})/);
-    if (at) return { lat: parseFloat(at[1]), lng: parseFloat(at[2]) };
-    const data = url.match(/!3d(-?\d{1,3}\.\d{5,}).*?!4d(-?\d{1,3}\.\d{5,})/);
-    if (data) return { lat: parseFloat(data[1]), lng: parseFloat(data[2]) };
-    const q = url.match(/[?&]q=(-?\d{1,3}\.\d{5,}),(-?\d{1,3}\.\d{5,})/);
-    if (q) return { lat: parseFloat(q[1]), lng: parseFloat(q[2]) };
-    const ll = url.match(/[?&]ll=(-?\d{1,3}\.\d{5,}),(-?\d{1,3}\.\d{5,})/);
-    if (ll) return { lat: parseFloat(ll[1]), lng: parseFloat(ll[2]) };
-    return null;
-  }
 
   function applyCoords(url: string, coords: { lat: number; lng: number }) {
     setBarForm((f: any) => ({ ...f, lat: coords.lat, lng: coords.lng, googleMapsUrl: url }));
@@ -375,34 +364,25 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
     setTimeout(() => setMapStep('idle'), 4000);
   }
 
-  function handleFirstPaste(pasted: string) {
+  async function handleFirstPaste(pasted: string) {
     const url = pasted.trim();
     if (!url) return;
-    const coords = extractCoordsFromUrl(url);
-    if (coords) { applyCoords(url, coords); return; }
-    if (/maps\.app\.goo\.gl|goo\.gl\/maps/i.test(url)) {
-      window.open(url, '_blank', 'noopener');
-      setMapStep('waiting_full_url');
-      setMapInput('');
+    if (!url.match(/google\.com\/maps|maps\.app\.goo\.gl|maps\.google\.com/i)) {
+      setMapStep('error');
+      setMapMessage("This doesn't look like a Google Maps link.");
       return;
     }
-    if (url.includes('google.com/maps') || url.includes('maps.google.com')) {
+    setMapStep('resolving');
+    setMapMessage('FINDING LOCATION...');
+    try {
+      const result = await resolveMap.mutateAsync({ url });
+      applyCoords(result.finalUrl, { lat: result.lat, lng: result.lng });
+      if (result.placeName) {
+        setMapMessage(`✓ LOCATION SET: ${result.lat.toFixed(5)}, ${result.lng.toFixed(5)} · ${result.placeName.toUpperCase()}`);
+      }
+    } catch (e: any) {
       setMapStep('error');
-      setMapMessage("This URL doesn't contain coordinates. In Google Maps, click on the bar to open its details — the URL will then contain the coordinates. Copy that URL and paste it here.");
-      return;
-    }
-    setMapStep('error');
-    setMapMessage("This doesn't look like a Google Maps link. Expected google.com/maps or maps.app.goo.gl");
-  }
-
-  function handleSecondPaste(pasted: string) {
-    const url = pasted.trim();
-    const coords = extractCoordsFromUrl(url);
-    if (coords) {
-      applyCoords(url, coords);
-    } else {
-      setMapStep('error');
-      setMapMessage("Still no coordinates found. Copy the URL from the browser address bar after the page fully loads — it should contain @46.1234,6.7890.");
+      setMapMessage(e?.message || 'COULD NOT READ LINK — try copying the URL from your browser address bar instead.');
     }
   }
 
@@ -470,60 +450,40 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
 
             <div className="space-y-2">
               <label className="block text-eyebrow opacity-60">GOOGLE MAPS LINK</label>
-              {mapStep === 'idle' || mapStep === 'error' ? (
-                <>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={mapInput}
-                      onChange={e => setMapInput(e.target.value)}
-                      onPaste={e => {
-                        const pasted = e.clipboardData.getData('text');
-                        e.preventDefault();
-                        setMapInput(pasted);
-                        setTimeout(() => handleFirstPaste(pasted), 0);
-                      }}
-                      placeholder="Paste any Google Maps link or URL"
-                      className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 text-[var(--color-paper)] text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleFirstPaste(mapInput)}
-                      disabled={!mapInput.trim()}
-                      className="shrink-0 border border-[var(--color-rule)] px-3 py-2.5 text-meta disabled:opacity-30 hover:border-[var(--color-blaze)] transition-colors"
-                    >USE</button>
-                  </div>
-                  {mapStep === 'error' && (
-                    <div className="text-meta text-[var(--color-blaze)] leading-relaxed">{mapMessage}</div>
-                  )}
-                  <div className="text-meta opacity-40">Works with google.com/maps URLs. For share links (maps.app.goo.gl), paste and we'll open them for you.</div>
-                </>
-              ) : mapStep === 'waiting_full_url' ? (
-                <div className="border border-[var(--color-sun)] p-3 space-y-3">
-                  <div className="text-eyebrow text-[var(--color-sun)]">STEP 2 OF 2</div>
-                  <div className="font-display text-base uppercase">We opened that link in a new tab</div>
-                  <ol className="text-meta opacity-70 space-y-1 list-decimal list-inside">
-                    <li>Switch to the new tab that just opened</li>
-                    <li>Wait for Google Maps to fully load</li>
-                    <li>Copy the full URL from the address bar</li>
-                    <li>Paste it below</li>
-                  </ol>
-                  <input
-                    type="text"
-                    autoFocus
-                    placeholder="Paste the full URL from the address bar here"
-                    onPaste={e => {
-                      const pasted = e.clipboardData.getData('text');
-                      e.preventDefault();
-                      setTimeout(() => handleSecondPaste(pasted), 0);
-                    }}
-                    className="w-full bg-[var(--color-ink-card)] border border-[var(--color-sun)] px-3 py-2.5 text-[var(--color-paper)] text-sm"
-                  />
-                  <button type="button" onClick={() => setMapStep('idle')} className="text-meta opacity-50 hover:opacity-100">← START OVER</button>
-                </div>
-              ) : mapStep === 'success' ? (
-                <div className="text-meta text-[var(--color-verified)] py-2">{mapMessage}</div>
-              ) : null}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={mapInput}
+                  onChange={e => setMapInput(e.target.value)}
+                  onPaste={e => {
+                    const pasted = e.clipboardData.getData('text');
+                    e.preventDefault();
+                    setMapInput(pasted);
+                    setTimeout(() => handleFirstPaste(pasted), 0);
+                  }}
+                  placeholder="Paste any Google Maps link or URL"
+                  className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 text-[var(--color-paper)] text-sm"
+                  disabled={mapStep === 'resolving'}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleFirstPaste(mapInput)}
+                  disabled={!mapInput.trim() || mapStep === 'resolving'}
+                  className="shrink-0 border border-[var(--color-rule)] px-3 py-2.5 text-meta disabled:opacity-30 hover:border-[var(--color-blaze)] transition-colors"
+                >
+                  {mapStep === 'resolving' ? '…' : 'USE'}
+                </button>
+              </div>
+              {mapStep === 'resolving' && (
+                <div className="text-meta opacity-60 animate-pulse">{mapMessage}</div>
+              )}
+              {mapStep === 'success' && (
+                <div className="text-meta text-[var(--color-verified)]">{mapMessage}</div>
+              )}
+              {mapStep === 'error' && (
+                <div className="text-meta text-[var(--color-blaze)] leading-relaxed">{mapMessage}</div>
+              )}
+              <div className="text-meta opacity-40">Works with google.com/maps URLs and maps.app.goo.gl share links.</div>
             </div>
 
             <div className="flex gap-2">
