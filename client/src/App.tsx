@@ -197,7 +197,7 @@ function Shell() {
     <div className="flex flex-col h-screen">
       <TickerBand adminActive={adminActive && location.pathname.startsWith("/admin")} onAdminTap={onAdminTap} />
       <Header onWordmarkTap={onWordmarkTap} />
-      <main className="flex-1 overflow-hidden min-h-0 max-w-md w-full mx-auto">
+      <main className="flex-1 min-h-0 overflow-y-auto max-w-md w-full mx-auto">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/map" element={<MapPage />} />
