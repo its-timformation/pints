@@ -11,57 +11,88 @@ export const adminRouter = router({
     .mutation(async ({ input }) => {
 
       function extractCoordsFromUrl(url: string): { lat: number; lng: number } | null {
-        // /@lat,lng,zoom — standard maps URL
         const at = url.match(/@(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
         if (at) return { lat: parseFloat(at[1]), lng: parseFloat(at[2]) };
 
-        // !3d{lat}!4d{lng} — data= parameter format (used in share links)
         const d3 = url.match(/!3d(-?\d{1,3}\.\d{4,})/);
         const d4 = url.match(/!4d(-?\d{1,3}\.\d{4,})/);
         if (d3 && d4) return { lat: parseFloat(d3[1]), lng: parseFloat(d4[1]) };
 
-        // ?q=lat,lng
         const q = url.match(/[?&]q=(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
         if (q) return { lat: parseFloat(q[1]), lng: parseFloat(q[2]) };
 
-        // ll=lat,lng
         const ll = url.match(/[?&]ll=(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
         if (ll) return { lat: parseFloat(ll[1]), lng: parseFloat(ll[2]) };
 
         return null;
       }
 
-      try {
-        const response = await fetch(input.url, {
+      function extractCoordsFromHtml(html: string): { lat: number; lng: number } | null {
+        // Scan all 6+ decimal coordinate pairs and return the first in the Alps region
+        const re = /(-?\d{1,3}\.\d{6,}),(-?\d{1,3}\.\d{6,})/g;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(html)) !== null) {
+          const lat = parseFloat(m[1]);
+          const lng = parseFloat(m[2]);
+          if (lat >= 43 && lat <= 48 && lng >= 4 && lng <= 12) {
+            return { lat, lng };
+          }
+        }
+        return null;
+      }
+
+      async function fetchFinalUrl(url: string, ua: string): Promise<{ finalUrl: string; html: string }> {
+        const response = await fetch(url, {
           method: 'GET',
           redirect: 'follow',
           headers: {
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+            'User-Agent': ua,
             'Accept': 'text/html,application/xhtml+xml,*/*;q=0.8',
             'Accept-Language': 'en-GB,en;q=0.9',
           },
           signal: AbortSignal.timeout(10000),
         });
+        const html = await response.text();
+        return { finalUrl: response.url, html };
+      }
 
-        const finalUrl = response.url;
-        console.log('Resolved to:', finalUrl);
+      const MOBILE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+      const DESKTOP_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-        const coords = extractCoordsFromUrl(finalUrl);
+      try {
+        // Step 1: mobile UA
+        const { finalUrl: url1, html: html1 } = await fetchFinalUrl(input.url, MOBILE_UA);
+        console.log('Step 1 resolved to:', url1);
+
+        let coords = extractCoordsFromUrl(url1);
+        let bestUrl = url1;
+
+        // Step 2: if we got a Place ID URL without coords, retry with desktop UA
+        if (!coords && url1.includes('/maps/place/')) {
+          const { finalUrl: url2, html: html2 } = await fetchFinalUrl(input.url, DESKTOP_UA);
+          console.log('Step 2 resolved to:', url2);
+          coords = extractCoordsFromUrl(url2);
+          if (url2.includes('/maps/')) bestUrl = url2;
+
+          // Step 3: HTML coordinate scan if URL still has no coords
+          if (!coords) {
+            coords = extractCoordsFromHtml(html2) ?? extractCoordsFromHtml(html1);
+          }
+        }
 
         if (!coords) {
-          console.log('No coords found in:', finalUrl);
           throw new TRPCError({
             code: 'NOT_FOUND',
-            message: `Could not find coordinates in the resolved URL. Resolved to: ${finalUrl.slice(0, 100)}`,
+            message: 'Could not extract coordinates. Try copying the URL from Google Maps on a desktop browser instead.',
           });
         }
 
-        const placeMatch = finalUrl.match(/\/maps\/place\/([^/@?!]+)/);
+        const placeMatch = bestUrl.match(/\/maps\/place\/([^/@?!]+)/);
         const placeName = placeMatch
           ? decodeURIComponent(placeMatch[1].replace(/\+/g, ' '))
           : null;
 
-        return { lat: coords.lat, lng: coords.lng, placeName, finalUrl, websiteUrl: null };
+        return { lat: coords.lat, lng: coords.lng, placeName, finalUrl: bestUrl, websiteUrl: null };
 
       } catch (e: any) {
         if (e instanceof TRPCError) throw e;
