@@ -64,6 +64,12 @@ export default function BarsManager({ onBack }: Props) {
   );
 }
 
+const TIME_OPTIONS = Array.from({ length: 96 }, (_, i) => {
+  const h = Math.floor(i / 4).toString().padStart(2, "0");
+  const m = ((i % 4) * 15).toString().padStart(2, "0");
+  return `${h}:${m}`;
+});
+
 const ALL_AREAS = [
   "Morzine", "Les Gets", "Avoriaz", "Montriond",
   "Châtel", "Morgins", "Champéry", "Les Crosets",
@@ -137,6 +143,8 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
     }
   };
 
+  const [openTime = "12:00", closeTime = "23:00"] = (barForm.openingHours || "12:00-23:00").split("-");
+
   if (!barDetails) return <div className="text-meta opacity-60">Loading details…</div>;
 
   return (
@@ -154,8 +162,28 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
             <input value={barForm.name} onChange={e => setBarForm({ ...barForm, name: e.target.value })}
               className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2" placeholder="Name" />
             <AreaTypeahead value={barForm.area || ""} onChange={v => setBarForm({ ...barForm, area: v })} />
-            <input value={barForm.openingHours || ""} onChange={e => setBarForm({ ...barForm, openingHours: e.target.value })}
-              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2" placeholder="HH:MM-HH:MM" />
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <div className="text-meta opacity-60 mb-1">OPENS</div>
+                <select
+                  value={openTime}
+                  onChange={e => setBarForm({ ...barForm, openingHours: `${e.target.value}-${closeTime}` })}
+                  className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2"
+                >
+                  {TIME_OPTIONS.map(t => <option key={t} value={t} className="bg-[var(--color-ink)]">{t}</option>)}
+                </select>
+              </div>
+              <div className="flex-1">
+                <div className="text-meta opacity-60 mb-1">CLOSES</div>
+                <select
+                  value={closeTime}
+                  onChange={e => setBarForm({ ...barForm, openingHours: `${openTime}-${e.target.value}` })}
+                  className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2"
+                >
+                  {TIME_OPTIONS.map(t => <option key={t} value={t} className="bg-[var(--color-ink)]">{t}</option>)}
+                </select>
+              </div>
+            </div>
             <select value={barForm.type} onChange={e => setBarForm({ ...barForm, type: e.target.value })}
               className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2">
               {["bar","pub","restaurant-bar","slope-side","club"].map(t => <option key={t} value={t} className="bg-[var(--color-ink)]">{t}</option>)}
