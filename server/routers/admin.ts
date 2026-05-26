@@ -3,8 +3,37 @@ import { db } from "../db";
 import { bars, drinks, deals, submissions, barReports } from "../../shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import { rateLimit } from "../rateLimit";
+
+const COORD_RE = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
+const QUERY_RE = /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/;
+
+function extractCoords(url: string) {
+  const m = COORD_RE.exec(url) ?? QUERY_RE.exec(url);
+  return m ? { lat: parseFloat(m[1]), lng: parseFloat(m[2]) } : null;
+}
 
 export const adminRouter = router({
+  resolveMapLink: publicProcedure
+    .input(z.object({ url: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const { allowed } = rateLimit(`resolveMapLink:${ctx.ip}`, { windowMs: 60 * 60 * 1000, max: 20 });
+      if (!allowed) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Rate limit exceeded — try again in an hour." });
+
+      let coords = extractCoords(input.url);
+      if (!coords) {
+        try {
+          const res = await fetch(input.url, { redirect: "follow" });
+          coords = extractCoords(res.url);
+        } catch {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Could not fetch URL — check it's a Google Maps link." });
+        }
+      }
+      if (!coords) throw new TRPCError({ code: "NOT_FOUND", message: "Couldn't find coordinates in this URL." });
+      return coords;
+    }),
+
   getSubmissions: publicProcedure
     .query(async () => {
       return db.select().from(submissions).orderBy(desc(submissions.createdAt));

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ChevronRight, Search } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { useAppStore, convertPrice, formatPrice, isOpenNow } from "../lib/store";
@@ -11,7 +11,6 @@ export default function ListPage() {
   const { currency } = useAppStore();
   const { data: barsWithDetails, isLoading } = trpc.bars.getAllWithDetails.useQuery();
   const location = useLocation();
-  const navigate = useNavigate();
 
   const [query, setQuery] = useState("");
   const [openOnly, setOpenOnly] = useState(false);
@@ -23,7 +22,7 @@ export default function ListPage() {
   useEffect(() => {
     if ((location.state as any)?.guinnessFilter) {
       setGuinnessOnly(true);
-      navigate(location.pathname, { replace: true, state: null });
+      window.history.replaceState({}, "", location.pathname);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

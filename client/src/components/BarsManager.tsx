@@ -122,9 +122,29 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
   const deleteDeal = trpc.admin.deleteDeal.useMutation({ onSuccess: () => refetch() });
   const updateBar = trpc.admin.updateBar.useMutation({ onSuccess: () => { refetch(); onUpdate(); } });
 
+  const resolveMapLink = trpc.admin.resolveMapLink.useMutation();
+
   const [editingBar, setEditingBar] = useState(false);
   const [barForm, setBarForm] = useState(barData);
   const [uploading, setUploading] = useState(false);
+  const [mapLinkInput, setMapLinkInput] = useState('');
+  const [mapLinkStatus, setMapLinkStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  const handleMapLinkPaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData('text');
+    if (!text) return;
+    setMapLinkStatus('loading');
+    try {
+      const result = await resolveMapLink.mutateAsync({ url: text });
+      setBarForm({ ...barForm, lat: result.lat, lng: result.lng });
+      setMapLinkInput('');
+      setMapLinkStatus('success');
+      setTimeout(() => setMapLinkStatus('idle'), 2500);
+    } catch {
+      setMapLinkStatus('error');
+      setTimeout(() => setMapLinkStatus('idle'), 3000);
+    }
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -198,6 +218,46 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
               />
               <span className="text-meta">POURS GUINNESS</span>
             </label>
+
+            {/* Google Maps link → auto-fill coordinates */}
+            <div>
+              <div className="text-meta opacity-60 mb-1">PASTE GOOGLE MAPS LINK</div>
+              <input
+                type="text"
+                value={mapLinkInput}
+                onChange={e => setMapLinkInput(e.target.value)}
+                onPaste={handleMapLinkPaste}
+                placeholder="Paste a Google Maps share link to auto-fill coordinates"
+                className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm"
+              />
+              {mapLinkStatus === 'loading' && <div className="text-meta opacity-60 mt-1 text-xs">RESOLVING…</div>}
+              {mapLinkStatus === 'success' && <div className="text-meta text-[var(--color-verified)] mt-1 text-xs">✓ COORDINATES SET</div>}
+              {mapLinkStatus === 'error' && <div className="text-meta text-[var(--color-blaze)] mt-1 text-xs">COULDN'T READ LINK — CHECK IT'S A GOOGLE MAPS URL</div>}
+            </div>
+
+            {/* Lat / Lng (filled automatically from Maps link or edited manually) */}
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <div className="text-meta opacity-60 mb-1">LAT</div>
+                <input
+                  type="number"
+                  step="0.00001"
+                  value={barForm.lat ?? ''}
+                  onChange={e => setBarForm({ ...barForm, lat: parseFloat(e.target.value) })}
+                  className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2"
+                />
+              </div>
+              <div className="flex-1">
+                <div className="text-meta opacity-60 mb-1">LNG</div>
+                <input
+                  type="number"
+                  step="0.00001"
+                  value={barForm.lng ?? ''}
+                  onChange={e => setBarForm({ ...barForm, lng: parseFloat(e.target.value) })}
+                  className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2"
+                />
+              </div>
+            </div>
 
             <label className="flex items-center justify-center gap-2 bg-[var(--color-ink-card)] border border-[var(--color-rule)] cursor-pointer p-2 relative overflow-hidden">
               {uploading ? <span className="animate-pulse text-meta">UPLOADING…</span> : (

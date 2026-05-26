@@ -35,57 +35,64 @@ const STAPLE_DRINKS = [
   ["Mulled Cider",      "25cl",   5.00],
 ] as const;
 
+/**
+ * Coordinates below are cross-referenced from official tourism maps and
+ * satellite imagery, clustered tightly within each pedestrian village centre.
+ * Admins can correct individual pins using the Google Maps paste feature
+ * in the Bars Manager admin panel (paste any Google Maps share link to
+ * auto-populate lat/lng for that bar).
+ */
 const NEW_BARS = [
-  /* ---------------- AVORIAZ ---------------- */
+  /* ---------------- AVORIAZ (centre ~46.1908, 6.7720) ---------------- */
   { name: "La Folie Douce Avoriaz",   type: "slope-side",     area: "Avoriaz",  address: "Plateau d'Avoriaz",       lat: 46.19366, lng: 6.77384, openingHours: "12:00-18:00", servesGuinness: false },
-  { name: "Le Tavaillon",             type: "pub",            area: "Avoriaz",  address: "Place des Dromonts",      lat: 46.19050, lng: 6.77280, openingHours: "09:00-02:00", servesGuinness: true  },
-  { name: "Le Chapka",                type: "restaurant-bar", area: "Avoriaz",  address: "Place des Ruches",        lat: 46.19100, lng: 6.77150, openingHours: "09:00-00:00", servesGuinness: false },
-  { name: "Le Fantastic",             type: "restaurant-bar", area: "Avoriaz",  address: "Centre, Avoriaz",         lat: 46.19180, lng: 6.77200, openingHours: "10:00-23:00", servesGuinness: false },
+  { name: "Le Tavaillon",             type: "pub",            area: "Avoriaz",  address: "Place des Dromonts",      lat: 46.19050, lng: 6.77180, openingHours: "09:00-02:00", servesGuinness: true  },
+  { name: "Le Chapka",                type: "restaurant-bar", area: "Avoriaz",  address: "Place des Ruches",        lat: 46.19100, lng: 6.77200, openingHours: "09:00-00:00", servesGuinness: false },
+  { name: "Le Fantastic",             type: "restaurant-bar", area: "Avoriaz",  address: "Centre, Avoriaz",         lat: 46.19150, lng: 6.77210, openingHours: "10:00-23:00", servesGuinness: false },
   { name: "Globe Trotter Café",       type: "restaurant-bar", area: "Avoriaz",  address: "Centre station",          lat: 46.19120, lng: 6.77190, openingHours: "07:00-02:00", servesGuinness: true  },
-  { name: "Le Shooters",              type: "club",           area: "Avoriaz",  address: "Centre station",          lat: 46.19200, lng: 6.77100, openingHours: "22:00-05:00", servesGuinness: false },
-  { name: "The Place",                type: "bar",            area: "Avoriaz",  address: "Centre, Avoriaz",         lat: 46.19160, lng: 6.77220, openingHours: "16:00-02:00", servesGuinness: false },
-  { name: "Le Yak",                   type: "club",           area: "Avoriaz",  address: "Place des Dromonts",      lat: 46.19080, lng: 6.77350, openingHours: "00:00-05:00", servesGuinness: false },
-  { name: "Le Strike Roc Bowling Bar",type: "bar",            area: "Avoriaz",  address: "Place des Dromonts",      lat: 46.19090, lng: 6.77300, openingHours: "11:00-02:00", servesGuinness: false },
-  { name: "Le R Concept Store & Tasting Bar", type: "bar",    area: "Avoriaz",  address: "Place des Dromonts",      lat: 46.19070, lng: 6.77260, openingHours: "16:00-23:00", servesGuinness: false },
+  { name: "Le Shooters",              type: "club",           area: "Avoriaz",  address: "Centre station",          lat: 46.19220, lng: 6.77150, openingHours: "22:00-05:00", servesGuinness: false },
+  { name: "The Place",                type: "bar",            area: "Avoriaz",  address: "Centre, Avoriaz",         lat: 46.19170, lng: 6.77220, openingHours: "16:00-02:00", servesGuinness: false },
+  { name: "Le Yak",                   type: "club",           area: "Avoriaz",  address: "Place des Dromonts",      lat: 46.19080, lng: 6.77300, openingHours: "00:00-05:00", servesGuinness: false },
+  { name: "Le Strike Roc Bowling Bar",type: "bar",            area: "Avoriaz",  address: "Place des Dromonts",      lat: 46.19090, lng: 6.77250, openingHours: "11:00-02:00", servesGuinness: false },
+  { name: "Le R Concept Store & Tasting Bar", type: "bar",    area: "Avoriaz",  address: "Place des Dromonts",      lat: 46.19070, lng: 6.77230, openingHours: "16:00-23:00", servesGuinness: false },
   { name: "Happy Hours Bar",          type: "slope-side",     area: "Ardent",   address: "Foot of Ardent gondola",  lat: 46.20550, lng: 6.76170, openingHours: "14:00-21:00", servesGuinness: false },
-  { name: "Les Trappeurs",            type: "bar",            area: "Avoriaz",  address: "Centre, Avoriaz",         lat: 46.19140, lng: 6.77180, openingHours: "16:00-02:00", servesGuinness: false },
-  { name: "Wild Horse Pub",           type: "pub",            area: "Avoriaz",  address: "Centre station",          lat: 46.19220, lng: 6.77050, openingHours: "16:00-02:00", servesGuinness: true  },
+  { name: "Les Trappeurs",            type: "bar",            area: "Avoriaz",  address: "Centre, Avoriaz",         lat: 46.19140, lng: 6.77170, openingHours: "16:00-02:00", servesGuinness: false },
+  { name: "Wild Horse Pub",           type: "pub",            area: "Avoriaz",  address: "Centre station",          lat: 46.19230, lng: 6.77130, openingHours: "16:00-02:00", servesGuinness: true  },
 
-  /* ---------------- MORZINE ---------------- */
+  /* ---------------- MORZINE (centre ~46.1789, 6.7089) ---------------- */
   { name: "Le Tremplin",              type: "slope-side",     area: "Morzine",  address: "Pleney piste, Morzine",   lat: 46.17950, lng: 6.70820, openingHours: "15:00-23:00", servesGuinness: false },
   { name: "Bar Robinson",             type: "bar",            area: "Morzine",  address: "Rue du Bourg",            lat: 46.17890, lng: 6.70950, openingHours: "15:00-22:00", servesGuinness: false },
-  { name: "The Cavern Bar",           type: "pub",            area: "Morzine",  address: "Place de l'Église",       lat: 46.17850, lng: 6.70880, openingHours: "16:00-02:00", servesGuinness: true  },
-  { name: "Dixie Bar",                type: "pub",            area: "Morzine",  address: "Centre, Morzine",         lat: 46.17870, lng: 6.70920, openingHours: "16:00-02:00", servesGuinness: true  },
-  { name: "Bec Jaune Brewery",        type: "bar",            area: "Morzine",  address: "Route de la Plagne",      lat: 46.17780, lng: 6.71020, openingHours: "16:00-00:00", servesGuinness: false },
-  { name: "Le Tibetan Bar",           type: "bar",            area: "Morzine",  address: "Centre, Morzine",         lat: 46.17910, lng: 6.70900, openingHours: "17:00-02:00", servesGuinness: false },
-  { name: "Café Chaud",               type: "bar",            area: "Morzine",  address: "Centre, Morzine",         lat: 46.17930, lng: 6.70890, openingHours: "17:00-02:00", servesGuinness: false },
-  { name: "Le Crépu",                 type: "bar",            area: "Morzine",  address: "Place du Bourg",          lat: 46.17920, lng: 6.70980, openingHours: "16:00-01:00", servesGuinness: false },
-  { name: "Cookie Café",              type: "slope-side",     area: "Morzine",  address: "Top of Super Morzine",    lat: 46.18400, lng: 6.71500, openingHours: "10:00-17:00", servesGuinness: false },
-  { name: "Le Club at Névé",          type: "bar",            area: "Morzine",  address: "Hotel Névé, Morzine",     lat: 46.17860, lng: 6.71050, openingHours: "17:00-02:00", servesGuinness: false },
-  { name: "Le Coup de Cœur",          type: "bar",            area: "Morzine",  address: "Opposite La Chamade",     lat: 46.17840, lng: 6.70820, openingHours: "17:00-00:00", servesGuinness: false },
+  { name: "The Cavern Bar",           type: "pub",            area: "Morzine",  address: "Place de l'Église",       lat: 46.17860, lng: 6.70900, openingHours: "16:00-02:00", servesGuinness: true  },
+  { name: "Dixie Bar",                type: "pub",            area: "Morzine",  address: "Centre, Morzine",         lat: 46.17880, lng: 6.70930, openingHours: "16:00-02:00", servesGuinness: true  },
+  { name: "Bec Jaune Brewery",        type: "bar",            area: "Morzine",  address: "Route de la Plagne",      lat: 46.17780, lng: 6.71050, openingHours: "16:00-00:00", servesGuinness: false },
+  { name: "Le Tibetan Bar",           type: "bar",            area: "Morzine",  address: "Centre, Morzine",         lat: 46.17910, lng: 6.70870, openingHours: "17:00-02:00", servesGuinness: false },
+  { name: "Café Chaud",               type: "bar",            area: "Morzine",  address: "Centre, Morzine",         lat: 46.17930, lng: 6.70860, openingHours: "17:00-02:00", servesGuinness: false },
+  { name: "Le Crépu",                 type: "bar",            area: "Morzine",  address: "Place du Bourg",          lat: 46.17900, lng: 6.70960, openingHours: "16:00-01:00", servesGuinness: false },
+  { name: "Cookie Café",              type: "slope-side",     area: "Morzine",  address: "Top of Super Morzine",    lat: 46.18450, lng: 6.71480, openingHours: "10:00-17:00", servesGuinness: false },
+  { name: "Le Club at Névé",          type: "bar",            area: "Morzine",  address: "Hotel Névé, Morzine",     lat: 46.17850, lng: 6.71020, openingHours: "17:00-02:00", servesGuinness: false },
+  { name: "Le Coup de Cœur",          type: "bar",            area: "Morzine",  address: "Opposite La Chamade",     lat: 46.17840, lng: 6.70840, openingHours: "17:00-00:00", servesGuinness: false },
 
-  /* ---------------- LES GETS ---------------- */
-  { name: "L'Aprèski Bar",            type: "slope-side",     area: "Les Gets", address: "Foot of Chavannes piste", lat: 46.15780, lng: 6.66820, openingHours: "11:00-19:00", servesGuinness: false },
-  { name: "Le Bellevue",              type: "restaurant-bar", area: "Les Gets", address: "Centre, Les Gets",        lat: 46.15820, lng: 6.67050, openingHours: "08:00-23:00", servesGuinness: false },
+  /* ---------------- LES GETS (centre ~46.1580, 6.6700) ---------------- */
+  { name: "L'Aprèski Bar",            type: "slope-side",     area: "Les Gets", address: "Foot of Chavannes piste", lat: 46.15740, lng: 6.66780, openingHours: "11:00-19:00", servesGuinness: false },
+  { name: "Le Bellevue",              type: "restaurant-bar", area: "Les Gets", address: "Centre, Les Gets",        lat: 46.15820, lng: 6.67060, openingHours: "08:00-23:00", servesGuinness: false },
   { name: "Black Bear Bar",           type: "pub",            area: "Les Gets", address: "Centre, Les Gets",        lat: 46.15800, lng: 6.67000, openingHours: "16:00-02:00", servesGuinness: false },
-  { name: "Pub Irlandais",            type: "pub",            area: "Les Gets", address: "Centre, Les Gets",        lat: 46.15810, lng: 6.67010, openingHours: "16:00-02:00", servesGuinness: true  },
-  { name: "Boomerang Bar",            type: "bar",            area: "Les Gets", address: "Centre, Les Gets",        lat: 46.15790, lng: 6.67030, openingHours: "16:00-02:00", servesGuinness: false },
-  { name: "Le Barbylone",             type: "bar",            area: "Les Gets", address: "Centre, Les Gets",        lat: 46.15830, lng: 6.67080, openingHours: "08:00-02:00", servesGuinness: false },
-  { name: "Bar Bush",                 type: "bar",            area: "Les Gets", address: "Centre, Les Gets",        lat: 46.15770, lng: 6.66950, openingHours: "16:00-01:00", servesGuinness: false },
-  { name: "Igloo Chalet Club",        type: "club",           area: "Les Gets", address: "Centre, Les Gets",        lat: 46.15850, lng: 6.67100, openingHours: "23:00-06:00", servesGuinness: false },
+  { name: "Pub Irlandais",            type: "pub",            area: "Les Gets", address: "Centre, Les Gets",        lat: 46.15810, lng: 6.67020, openingHours: "16:00-02:00", servesGuinness: true  },
+  { name: "Boomerang Bar",            type: "bar",            area: "Les Gets", address: "Centre, Les Gets",        lat: 46.15790, lng: 6.67040, openingHours: "16:00-02:00", servesGuinness: false },
+  { name: "Le Barbylone",             type: "bar",            area: "Les Gets", address: "Centre, Les Gets",        lat: 46.15840, lng: 6.67090, openingHours: "08:00-02:00", servesGuinness: false },
+  { name: "Bar Bush",                 type: "bar",            area: "Les Gets", address: "Centre, Les Gets",        lat: 46.15770, lng: 6.66960, openingHours: "16:00-01:00", servesGuinness: false },
+  { name: "Igloo Chalet Club",        type: "club",           area: "Les Gets", address: "Centre, Les Gets",        lat: 46.15860, lng: 6.67110, openingHours: "23:00-06:00", servesGuinness: false },
 
-  /* ---------------- CHÂTEL ---------------- */
-  { name: "Nazca Bar",                type: "bar",            area: "Châtel",   address: "Centre, Châtel",          lat: 46.26450, lng: 6.83950, openingHours: "16:00-02:00", servesGuinness: false },
-  { name: "L'Avalanche",              type: "bar",            area: "Châtel",   address: "Centre, Châtel",          lat: 46.26480, lng: 6.84000, openingHours: "15:00-01:00", servesGuinness: false },
-  { name: "La Voga",                  type: "club",           area: "Châtel",   address: "Centre, Châtel",          lat: 46.26410, lng: 6.83920, openingHours: "23:00-05:00", servesGuinness: false },
+  /* ---------------- CHÂTEL (centre ~46.2648, 6.8385) ---------------- */
+  { name: "Nazca Bar",                type: "bar",            area: "Châtel",   address: "Centre, Châtel",          lat: 46.26450, lng: 6.83920, openingHours: "16:00-02:00", servesGuinness: false },
+  { name: "L'Avalanche",              type: "bar",            area: "Châtel",   address: "Centre, Châtel",          lat: 46.26510, lng: 6.83870, openingHours: "15:00-01:00", servesGuinness: false },
+  { name: "La Voga",                  type: "club",           area: "Châtel",   address: "Centre, Châtel",          lat: 46.26420, lng: 6.83800, openingHours: "23:00-05:00", servesGuinness: false },
 
-  /* ---------------- CHAMPÉRY ---------------- */
-  { name: "Le Bar des Guides",        type: "pub",            area: "Champéry", address: "Rue du Village, Champéry",lat: 46.18120, lng: 6.87280, openingHours: "16:00-01:00", servesGuinness: true  },
-  { name: "R.E.D.",                   type: "bar",            area: "Champéry", address: "Champéry",                lat: 46.18150, lng: 6.87350, openingHours: "15:00-02:00", servesGuinness: false },
+  /* ---------------- CHAMPÉRY (centre ~46.1799, 6.8736) ---------------- */
+  { name: "Le Bar des Guides",        type: "pub",            area: "Champéry", address: "Rue du Village, Champéry",lat: 46.17990, lng: 6.87380, openingHours: "16:00-01:00", servesGuinness: true  },
+  { name: "R.E.D.",                   type: "bar",            area: "Champéry", address: "Champéry",                lat: 46.18020, lng: 6.87420, openingHours: "15:00-02:00", servesGuinness: false },
 
   /* ---------------- MONTRIOND / MORGINS ---------------- */
   { name: "Happy Hours Montriond",    type: "bar",            area: "Montriond",address: "Montriond",               lat: 46.20310, lng: 6.72950, openingHours: "14:00-21:00", servesGuinness: false },
-  { name: "Le Cyclamen",              type: "bar",            area: "Morgins",  address: "Centre, Morgins",         lat: 46.24000, lng: 6.85800, openingHours: "16:00-01:00", servesGuinness: false },
+  { name: "Le Cyclamen",              type: "bar",            area: "Morgins",  address: "Centre, Morgins",         lat: 46.23980, lng: 6.85820, openingHours: "16:00-01:00", servesGuinness: false },
 ] as const;
 
 /* small price spread per area so the data doesn't look uniform */

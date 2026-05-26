@@ -130,10 +130,10 @@ export default function BarDetail() {
                   <div className="font-display text-lg text-[var(--color-sun)]">{displayPrice}</div>
                   <Link
                     to={`/submit/${bar.id}?drink=${encodeURIComponent(drink.name)}&size=${encodeURIComponent(drink.size ?? "")}&update=1`}
-                    className="text-meta opacity-55 hover:opacity-100 transition-opacity ml-1"
+                    className="shrink-0 border border-[var(--color-rule)] text-meta uppercase px-2 py-1 hover:border-[var(--color-blaze)] transition-colors !min-h-0"
                     aria-label={`Suggest update for ${drink.name}`}
                   >
-                    ↑
+                    UPDATE PRICE
                   </Link>
                 </li>
               );
@@ -143,7 +143,7 @@ export default function BarDetail() {
       </section>
 
       {/* Add a new drink CTA */}
-      <Link to={`/submit/${bar.id}`} className="block mx-5 mb-6 grain-paper text-[var(--color-ink)] px-4 py-3.5 flex items-center justify-between">
+      <Link to={`/submit/${bar.id}`} className="block mx-5 mb-6 grain-blaze text-[var(--color-paper)] px-4 py-3.5 flex items-center justify-between">
         <div>
           <div className="text-eyebrow opacity-60">CONTRIBUTE</div>
           <div className="font-display text-lg uppercase mt-0.5">REPORT A NEW PRICE</div>

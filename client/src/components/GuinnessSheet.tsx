@@ -127,7 +127,7 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
 
   if (!open) return null;
 
-  const sheetHeight = expanded ? "90vh" : "60vh";
+  const sheetHeight = expanded ? "90vh" : "65vh";
 
   return (
     <div className="fixed inset-0 z-[90] flex flex-col" role="dialog" aria-label="Nearest Guinness">
