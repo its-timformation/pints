@@ -129,6 +129,7 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
   const [uploading, setUploading] = useState(false);
   const [mapLinkInput, setMapLinkInput] = useState('');
   const [mapLinkStatus, setMapLinkStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [mapLinkMessage, setMapLinkMessage] = useState('');
 
   const handleMapLinkPaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
     const text = e.clipboardData.getData('text');
@@ -136,13 +137,23 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
     setMapLinkStatus('loading');
     try {
       const result = await resolveMapLink.mutateAsync({ url: text });
-      setBarForm((prev: any) => ({ ...prev, lat: result.lat, lng: result.lng, googleMapsUrl: text }));
+      setBarForm((prev: any) => ({
+        ...prev,
+        lat: result.lat,
+        lng: result.lng,
+        googleMapsUrl: result.finalUrl,
+        ...(result.websiteUrl && !prev.websiteUrl ? { websiteUrl: result.websiteUrl } : {}),
+      }));
       setMapLinkInput('');
+      const msg = `✓ COORDINATES SET: ${result.lat}, ${result.lng}${result.websiteUrl ? " · WEBSITE FOUND" : ""}`;
+      setMapLinkMessage(msg);
       setMapLinkStatus('success');
-      setTimeout(() => setMapLinkStatus('idle'), 2500);
-    } catch {
-      setMapLinkStatus('error');
       setTimeout(() => setMapLinkStatus('idle'), 3000);
+    } catch (err: any) {
+      const msg = err?.message ?? "COULDN'T READ LINK — CHECK IT'S A GOOGLE MAPS URL";
+      setMapLinkMessage(msg);
+      setMapLinkStatus('error');
+      setTimeout(() => setMapLinkStatus('idle'), 4000);
     }
   };
 
@@ -231,8 +242,8 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
                 className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm"
               />
               {mapLinkStatus === 'loading' && <div className="text-meta opacity-60 mt-1 text-xs">RESOLVING…</div>}
-              {mapLinkStatus === 'success' && <div className="text-meta text-[var(--color-verified)] mt-1 text-xs">✓ COORDINATES SET</div>}
-              {mapLinkStatus === 'error' && <div className="text-meta text-[var(--color-blaze)] mt-1 text-xs">COULDN'T READ LINK — CHECK IT'S A GOOGLE MAPS URL</div>}
+              {mapLinkStatus === 'success' && <div className="text-meta text-[var(--color-verified)] mt-1 text-xs">{mapLinkMessage}</div>}
+              {mapLinkStatus === 'error' && <div className="text-meta text-[var(--color-blaze)] mt-1 text-xs">{mapLinkMessage}</div>}
             </div>
 
             {/* Lat / Lng (filled automatically from Maps link or edited manually) */}

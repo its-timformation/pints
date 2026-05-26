@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight, X } from "lucide-react";
+import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { trpc } from "../lib/trpc";
 import { useAppStore, convertPrice, formatPrice, isOpenNow, distanceKm } from "../lib/store";
 import { LoadingMessage } from "./LoadingMessage";
@@ -11,41 +12,24 @@ interface Props {
   userLocation?: { lat: number; lng: number } | null;
 }
 
-// Snap points: 0 = 35vh visible, 1 = 65vh visible, 2 = 90vh visible
-// Sheet is 90vh tall; translateY shifts it up from the bottom.
-// translate % of window height: snap 0 → 55%, snap 1 → 25%, snap 2 → 0%
-const SNAP_TRANSLATE_PCT = [55, 25, 0];
-const SNAP_BACKDROP = [0.35, 0.55, 0.72];
-const VELOCITY_THRESHOLD = 0.4; // px/ms
-
 export function GuinnessSheet({ open, onClose, userLocation }: Props) {
   const navigate = useNavigate();
   const { currency } = useAppStore();
   const { data: allBars, isLoading } = trpc.bars.getAllWithDetails.useQuery(undefined, { enabled: open });
 
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const dragStartY = useRef<number | null>(null);
-  const velocitySamples = useRef<Array<{ y: number; t: number }>>([]);
-  const [snap, setSnap] = useState<0 | 1 | 2>(1); // start at 65vh
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const y = useMotionValue(0);
+  const SNAP_POINTS = [0, window.innerHeight * 0.35, window.innerHeight * 0.65];
+  const DEFAULT_SNAP = window.innerHeight * 0.35;
 
-  // Reset when sheet opens/closes
+  const backdropOpacity = useTransform(y, [0, window.innerHeight * 0.65], [0.7, 0]);
+
+  // Animate in on open
   useEffect(() => {
-    if (!open) {
-      setSnap(1);
-      setDragOffset(0);
-      setIsDragging(false);
+    if (open) {
+      y.set(window.innerHeight);
+      animate(y, DEFAULT_SNAP, { type: "spring", stiffness: 400, damping: 40 });
     }
-  }, [open]);
-
-  // Escape key
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [open, onClose]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll lock
   useEffect(() => {
@@ -55,84 +39,42 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
     }
   }, [open]);
 
-  // Window-level mouse events while dragging
+  // Escape key
   useEffect(() => {
-    if (!isDragging) return;
-    const onMove = (e: MouseEvent) => {
-      if (dragStartY.current === null) return;
-      const offset = e.clientY - dragStartY.current;
-      setDragOffset(offset);
-      velocitySamples.current.push({ y: e.clientY, t: Date.now() });
-      if (velocitySamples.current.length > 6) velocitySamples.current.shift();
-    };
-    const onUp = (e: MouseEvent) => {
-      if (dragStartY.current === null) return;
-      commitDrag(e.clientY - dragStartY.current);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [isDragging, snap]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function startDrag(clientY: number) {
-    dragStartY.current = clientY;
-    velocitySamples.current = [{ y: clientY, t: Date.now() }];
-    setIsDragging(true);
-  }
-
-  function moveDrag(clientY: number) {
-    if (dragStartY.current === null) return;
-    setDragOffset(clientY - dragStartY.current);
-    velocitySamples.current.push({ y: clientY, t: Date.now() });
-    if (velocitySamples.current.length > 6) velocitySamples.current.shift();
-  }
-
-  function commitDrag(offset: number) {
-    const samples = velocitySamples.current;
-    let velocity = 0;
-    if (samples.length >= 2) {
-      const last = samples[samples.length - 1];
-      const first = samples[0];
-      const dt = last.t - first.t;
-      if (dt > 0) velocity = (last.y - first.y) / dt;
-    }
-
-    // Determine next snap
-    let nextSnap: 0 | 1 | 2 = snap;
-    const goingUp = velocity < -VELOCITY_THRESHOLD || offset < -60;
-    const goingDown = velocity > VELOCITY_THRESHOLD || offset > 60;
-
-    if (goingUp) {
-      nextSnap = Math.min(snap + 1, 2) as 0 | 1 | 2;
-    } else if (goingDown) {
-      if (snap === 0) {
-        // Close from lowest snap
-        dragStartY.current = null;
-        setDragOffset(0);
-        setIsDragging(false);
-        onClose();
-        return;
-      }
-      nextSnap = Math.max(snap - 1, 0) as 0 | 1 | 2;
-    }
-
-    dragStartY.current = null;
-    velocitySamples.current = [];
-    setSnap(nextSnap);
-    setDragOffset(0);
-    setIsDragging(false);
-  }
-
-  const onTouchStart = (e: React.TouchEvent) => startDrag(e.touches[0].clientY);
-  const onTouchMove = (e: React.TouchEvent) => moveDrag(e.touches[0].clientY);
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (dragStartY.current === null) return;
-    commitDrag(e.changedTouches[0].clientY - dragStartY.current);
+  const handleClose = () => {
+    animate(y, window.innerHeight, { type: "spring", stiffness: 300, damping: 30 });
+    setTimeout(onClose, 350);
   };
-  const onMouseDown = (e: React.MouseEvent) => startDrag(e.clientY);
+
+  const onDragEnd = (_: any, info: any) => {
+    const velocity = info.velocity.y;
+    const current = y.get();
+
+    if (velocity > 500) {
+      animate(y, window.innerHeight, { type: "spring", stiffness: 300, damping: 30 });
+      setTimeout(onClose, 300);
+      return;
+    }
+    if (velocity < -500) {
+      animate(y, 0, { type: "spring", stiffness: 400, damping: 40 });
+      return;
+    }
+    const nearest = SNAP_POINTS.reduce((a, b) =>
+      Math.abs(b - current) < Math.abs(a - current) ? b : a
+    );
+    if (nearest >= window.innerHeight * 0.65) {
+      animate(y, window.innerHeight, { type: "spring", stiffness: 300, damping: 30 });
+      setTimeout(onClose, 300);
+    } else {
+      animate(y, nearest, { type: "spring", stiffness: 400, damping: 40 });
+    }
+  };
 
   const nearbyGuinnessBars = useMemo(() => {
     if (!allBars) return [];
@@ -153,46 +95,31 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
 
   if (!open) return null;
 
-  const baseTranslatePct = SNAP_TRANSLATE_PCT[snap];
-  const backdropOpacity = SNAP_BACKDROP[snap];
-
-  const sheetStyle = {
-    height: "90vh",
-    transform: `translateY(calc(${baseTranslatePct}vh + ${dragOffset}px))`,
-    transition: isDragging ? "none" : "transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)",
-  };
-
-  const backdropStyle = {
-    opacity: backdropOpacity,
-    transition: isDragging ? "none" : "opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1)",
-  };
-
   return (
-    <div className="fixed inset-0 z-[90] flex flex-col" role="dialog" aria-label="Nearest Guinness">
-      {/* Dimmed backdrop */}
-      <div
-        className="absolute inset-0 bg-[var(--color-ink)]"
-        style={backdropStyle}
-        onClick={onClose}
+    <div className="fixed inset-0 z-[90]" role="dialog" aria-label="Nearest Guinness">
+      {/* Backdrop */}
+      <motion.div
+        className="absolute inset-0 bg-black"
+        style={{ opacity: backdropOpacity }}
+        onClick={handleClose}
       />
 
       {/* Sheet */}
-      <div
-        ref={sheetRef}
-        className="relative mt-auto bg-[var(--color-paper)] text-[var(--color-ink)] sheet-enter flex flex-col overflow-hidden"
-        style={sheetStyle}
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 bg-[var(--color-paper)] text-[var(--color-ink)] rounded-t-2xl flex flex-col overflow-hidden"
+        style={{ y, height: "100vh" }}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: window.innerHeight }}
+        dragElastic={0.1}
+        onDragEnd={onDragEnd}
       >
-        {/* 44px drag strip */}
+        {/* Drag handle */}
         <div
           className="shrink-0 flex flex-col items-center justify-center cursor-grab touch-none select-none"
           style={{ height: 44 }}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-          onMouseDown={onMouseDown}
           aria-label="Drag to resize or dismiss"
         >
-          <div className="w-10 h-1 bg-[var(--color-ink)] opacity-20 rounded-full" />
+          <div className="w-12 rounded-full bg-[var(--color-ink)] opacity-30" style={{ height: 5 }} />
         </div>
 
         {/* Header */}
@@ -201,12 +128,12 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
             <div className="text-eyebrow opacity-60">PERFECT TIME FOR A GUINNESS</div>
             <h2 className="text-headline mt-2">WORTH THE<br/>WALK</h2>
           </div>
-          <button onClick={onClose} className="p-2 -mr-2" aria-label="Close">
+          <button onClick={handleClose} className="p-2 -mr-2" aria-label="Close">
             <X size={20} strokeWidth={1.6} />
           </button>
         </div>
 
-        {/* Bar list — scrollable */}
+        {/* Bar list */}
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <LoadingMessage surface="guinness" className="!text-[var(--color-ink)]" />
@@ -224,7 +151,7 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
                   <li key={bar.id}>
                     <Link
                       to={`/bar/${bar.id}`}
-                      onClick={onClose}
+                      onClick={handleClose}
                       className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--color-rule-paper)] last:border-b-0"
                     >
                       <span className="num-rail text-[var(--color-blaze)] w-6 shrink-0">{String(i + 1).padStart(2, "0")}</span>
@@ -252,13 +179,13 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
         {/* Footer */}
         <div className="shrink-0">
           <button
-            onClick={() => { onClose(); navigate("/list", { state: { guinnessFilter: true } }); }}
+            onClick={() => { handleClose(); setTimeout(() => navigate("/list", { state: { guinnessFilter: true } }), 360); }}
             className="w-full bg-[var(--color-ink)] text-[var(--color-paper)] py-4 font-display uppercase min-h-[44px]"
           >
             VIEW ALL GUINNESS BARS →
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

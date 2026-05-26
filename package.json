@@ -8,7 +8,8 @@
     "start": "NODE_ENV=production node dist/index.js",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx seed.ts"
+    "db:seed": "tsx seed.ts",
+    "fix:coords": "tsx scripts/fixBarCoordinates.ts"
   },
   "dependencies": {
     "@fastify/multipart": "^10.0.0",

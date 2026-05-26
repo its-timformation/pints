@@ -31,7 +31,7 @@ function clearAdminSession() {
 function TickerBand({ adminActive, onAdminTap }: { adminActive: boolean; onAdminTap: () => void; }) {
   const location = useLocation();
   const today = new Date();
-  const dateStr = `${(today.getMonth()+1).toString().padStart(2,'0')}.${today.getDate().toString().padStart(2,'0')}.${today.getFullYear().toString().slice(-2)}`;
+  const dateStr = `${today.getDate().toString().padStart(2,'0')}.${(today.getMonth()+1).toString().padStart(2,'0')}.${today.getFullYear().toString().slice(-2)}`;
   const pageMap: Record<string, string> = {
     '/': 'DISPATCH 01',
     '/map': 'DISPATCH 02',
