@@ -1,6 +1,6 @@
 import { initTRPC } from "@trpc/server";
 import type { CreateFastifyContextOptions } from "@trpc/server/adapters/fastify";
-import { isAdminToken } from "./routers/auth";
+import { isAdminToken } from "./adminSession";
 
 export function createContext({ req }: CreateFastifyContextOptions) {
   // Render and most proxies forward the real client IP via x-forwarded-for.
