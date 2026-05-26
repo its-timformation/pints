@@ -1,37 +1,17 @@
 import "dotenv/config";
 import { db } from "../server/db";
 import { bars } from "../shared/schema";
-import { resolveGoogleMapsLink } from "../server/utils/extractMapCoords";
 import { eq } from "drizzle-orm";
 
+// Redirect to updateCoords.ts — coordinate updates are now done via direct
+// DB update with hardcoded values. See scripts/updateCoords.ts for the full
+// coordinate table and `yarn update:coords` to apply it.
 async function run() {
-  const allBars = await db.select().from(bars);
-  const barsWithLinks = allBars.filter(b => b.googleMapsUrl);
-
-  console.log(`Found ${barsWithLinks.length} bars with Google Maps links`);
-
-  for (const bar of barsWithLinks) {
-    try {
-      console.log(`\nResolving: ${bar.name}`);
-      console.log(`  Link: ${bar.googleMapsUrl}`);
-
-      const result = await resolveGoogleMapsLink(bar.googleMapsUrl!);
-
-      await db.update(bars).set({
-        lat: result.lat,
-        lng: result.lng,
-        ...(result.websiteUrl && !bar.websiteUrl ? { websiteUrl: result.websiteUrl } : {}),
-      }).where(eq(bars.id, bar.id));
-
-      console.log(`  ✓ Updated: ${result.lat.toFixed(5)}, ${result.lng.toFixed(5)}${result.websiteUrl ? " + website" : ""}`);
-
-      await new Promise(r => setTimeout(r, 1500));
-    } catch (e: any) {
-      console.log(`  ✗ Failed: ${e.message}`);
-    }
-  }
-
-  console.log("\nDone.");
+  const allBars = await db.select({ id: bars.id, name: bars.name, googleMapsUrl: bars.googleMapsUrl }).from(bars);
+  const withLinks = allBars.filter(b => b.googleMapsUrl);
+  console.log(`${withLinks.length} bars have a googleMapsUrl stored.`);
+  console.log("Coordinate resolution from URLs is no longer supported server-side.");
+  console.log("Use `yarn update:coords` to apply hardcoded coordinates from scripts/updateCoords.ts");
 }
 
 run().catch(console.error);
