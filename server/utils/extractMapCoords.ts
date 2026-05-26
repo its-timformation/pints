@@ -1,74 +1,175 @@
-export interface MapScrapeResult {
+/**
+ * Resolves a Google Maps URL or short link (maps.app.goo.gl/xxx) to coordinates.
+ *
+ * Mobile share links from Google Maps app produce short links like:
+ *   https://maps.app.goo.gl/AbCdEfG
+ *
+ * These redirect through several hops to a final URL like:
+ *   https://www.google.com/maps/place/Le+Tavaillon/@46.1905,6.7718,17z/...
+ *
+ * The coordinates are ALWAYS in the final URL in the @lat,lng pattern.
+ * We do NOT need to parse HTML for coordinates — just follow redirects and
+ * extract from the final URL.
+ */
+
+export interface MapLinkResult {
   lat: number;
   lng: number;
   websiteUrl: string | null;
   finalUrl: string;
+  placeName: string | null;
 }
 
-export async function scrapeMapLink(url: string): Promise<MapScrapeResult> {
-  const response = await fetch(url, {
-    redirect: "follow",
-    headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15" },
-    signal: AbortSignal.timeout(8000),
-  });
-  const finalUrl = response.url;
-  const html = await response.text();
+function extractCoordsFromUrl(url: string): { lat: number; lng: number } | null {
+  // Primary: /@lat,lng,zoom — most common format
+  const atSign = url.match(/@(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
+  if (atSign) return { lat: parseFloat(atSign[1]), lng: parseFloat(atSign[2]) };
 
-  let lat: number | null = null;
-  let lng: number | null = null;
+  // Secondary: ?q=lat,lng or &q=lat,lng
+  const qParam = url.match(/[?&]q=(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
+  if (qParam) return { lat: parseFloat(qParam[1]), lng: parseFloat(qParam[2]) };
 
-  // Pattern 1: /@lat,lng,zoom
-  const atMatch = finalUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-  if (atMatch) { lat = parseFloat(atMatch[1]); lng = parseFloat(atMatch[2]); }
+  // Tertiary: !3d lat !4d lng (data parameter format)
+  const data = url.match(/!3d(-?\d{1,3}\.\d{4,}).*?!4d(-?\d{1,3}\.\d{4,})/);
+  if (data) return { lat: parseFloat(data[1]), lng: parseFloat(data[2]) };
 
-  // Pattern 2: ?q=lat,lng
-  if (!lat) {
-    const qMatch = finalUrl.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);
-    if (qMatch) { lat = parseFloat(qMatch[1]); lng = parseFloat(qMatch[2]); }
-  }
+  // ll= parameter
+  const ll = url.match(/[?&]ll=(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
+  if (ll) return { lat: parseFloat(ll[1]), lng: parseFloat(ll[2]) };
 
-  // Pattern 3: /place/.../@lat,lng in final URL
-  if (!lat) {
-    const placeMatch = finalUrl.match(/place\/[^/]+\/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-    if (placeMatch) { lat = parseFloat(placeMatch[1]); lng = parseFloat(placeMatch[2]); }
-  }
+  return null;
+}
 
-  // Pattern 4: look in HTML for app initialization data
-  if (!lat) {
-    const htmlMatch = html.match(/\[\[null,null,(-?\d+\.\d+),(-?\d+\.\d+)\]/);
-    if (htmlMatch) { lat = parseFloat(htmlMatch[1]); lng = parseFloat(htmlMatch[2]); }
-  }
+function extractPlaceName(url: string): string | null {
+  const placeMatch = url.match(/\/maps\/place\/([^/@]+)/);
+  if (!placeMatch) return null;
+  return decodeURIComponent(placeMatch[1].replace(/\+/g, " "));
+}
 
-  // Pattern 5: meta tag or JSON-LD coordinates
-  if (!lat) {
-    const metaMatch = html.match(/"latitude"\s*:\s*(-?\d+\.\d+).*?"longitude"\s*:\s*(-?\d+\.\d+)/s);
-    if (metaMatch) { lat = parseFloat(metaMatch[1]); lng = parseFloat(metaMatch[2]); }
-  }
-
-  if (!lat || !lng) {
-    throw new Error("Could not extract coordinates from this link. Try copying the link from Google Maps → Share → Copy link.");
-  }
-
-  // Sanity check: roughly the Alps region
-  if (lat < 40 || lat > 50 || lng < 4 || lng > 12) {
-    throw new Error(`Coordinates found (${lat}, ${lng}) don't look like they're in the Alps. Please check the link.`);
-  }
-
-  // Extract website URL from page HTML
-  let websiteUrl: string | null = null;
-  const websitePatterns = [
-    /href="(https?:\/\/(?!(?:www\.)?(?:google|maps|goo\.gl|googleapis))[^"]+)"[^>]*>[^<]*(?:website|site web|Visit|Official)/i,
-    /"website":"([^"]+)"/,
-    /data-website="([^"]+)"/,
-    /"url":"(https?:\/\/(?!(?:www\.)?google)[^"]+)"/,
+async function followRedirects(url: string, maxHops = 6): Promise<string> {
+  const userAgents = [
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
   ];
-  for (const pattern of websitePatterns) {
-    const match = html.match(pattern);
-    if (match?.[1] && !match[1].includes("google") && !match[1].includes("goo.gl")) {
-      websiteUrl = match[1];
-      break;
+
+  for (const ua of userAgents) {
+    let current = url;
+    for (let i = 0; i < maxHops; i++) {
+      try {
+        const res = await fetch(current, {
+          method: "GET",
+          redirect: "manual",
+          headers: {
+            "User-Agent": ua,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-GB,en;q=0.9",
+          },
+          signal: AbortSignal.timeout(6000),
+        });
+
+        if (res.status >= 300 && res.status < 400) {
+          const location = res.headers.get("location");
+          if (!location) break;
+          current = location.startsWith("http") ? location : new URL(location, current).href;
+          if (extractCoordsFromUrl(current)) return current;
+          continue;
+        }
+
+        return res.url || current;
+      } catch {
+        break;
+      }
     }
+
+    if (extractCoordsFromUrl(current)) return current;
   }
 
-  return { lat, lng, websiteUrl, finalUrl };
+  return url;
+}
+
+async function extractWebsiteFromHtml(mapsUrl: string): Promise<string | null> {
+  try {
+    const res = await fetch(mapsUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+      },
+      signal: AbortSignal.timeout(6000),
+    });
+    const html = await res.text();
+
+    const patterns = [
+      /"(https?:\/\/(?!(?:www\.)?(?:google|goo\.gl|googleapis|googleusercontent|youtube|facebook|instagram|twitter))[a-zA-Z0-9][^"]{3,60})"(?:[^}]*)"website"/,
+      /"website","(https?:\/\/(?!(?:www\.)?google)[^"]+)"/,
+      /\["(https?:\/\/(?!(?:www\.)?(?:google|goo))[^"]{5,80})"\].*?website/s,
+      /data-url="(https?:\/\/(?!(?:www\.)?google)[^"]+)"/,
+      /href="(https?:\/\/(?!(?:www\.)?(?:google|goo\.gl))[^"]{5,80})"[^>]*aria-label="[^"]*(?:website|site|web)"/i,
+    ];
+
+    for (const pattern of patterns) {
+      const match = html.match(pattern);
+      if (match?.[1]) {
+        const candidate = match[1];
+        if (candidate.length > 8 && candidate.length < 200 && !candidate.includes("\\")) {
+          return candidate;
+        }
+      }
+    }
+  } catch {
+    // Website extraction is best-effort
+  }
+  return null;
+}
+
+export async function resolveGoogleMapsLink(url: string): Promise<MapLinkResult> {
+  if (!url.match(/google\.com\/maps|maps\.app\.goo\.gl|goo\.gl\/maps/i)) {
+    throw new Error(
+      "This doesn't look like a Google Maps link. Share links look like: https://maps.app.goo.gl/..."
+    );
+  }
+
+  const finalUrl = await followRedirects(url);
+  const coords = extractCoordsFromUrl(finalUrl);
+
+  if (!coords) {
+    // Last attempt: follow with redirect:follow and check response URL
+    try {
+      const res = await fetch(url, {
+        redirect: "follow",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+      const responseUrl = res.url;
+      const fallbackCoords = extractCoordsFromUrl(responseUrl);
+      if (fallbackCoords) {
+        const websiteUrl = await extractWebsiteFromHtml(responseUrl);
+        return {
+          ...fallbackCoords,
+          websiteUrl,
+          finalUrl: responseUrl,
+          placeName: extractPlaceName(responseUrl),
+        };
+      }
+    } catch {}
+
+    throw new Error(
+      "Could not find coordinates in this link. Make sure you're using the share link from Google Maps (tap Share → Copy link). The link should look like: https://maps.app.goo.gl/..."
+    );
+  }
+
+  if (coords.lat < 43 || coords.lat > 48 || coords.lng < 4 || coords.lng > 12) {
+    throw new Error(
+      `Coordinates found (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}) don't look like they're in the Alps. Double-check you copied the right link.`
+    );
+  }
+
+  const websiteUrl = await extractWebsiteFromHtml(finalUrl);
+
+  return {
+    ...coords,
+    websiteUrl,
+    finalUrl,
+    placeName: extractPlaceName(finalUrl),
+  };
 }

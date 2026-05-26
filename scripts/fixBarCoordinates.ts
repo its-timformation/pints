@@ -1,28 +1,37 @@
 import "dotenv/config";
 import { db } from "../server/db";
 import { bars } from "../shared/schema";
-import { eq, isNotNull } from "drizzle-orm";
-import { scrapeMapLink } from "../server/utils/extractMapCoords";
+import { resolveGoogleMapsLink } from "../server/utils/extractMapCoords";
+import { eq } from "drizzle-orm";
 
-async function main() {
-  const allBars = await db.select().from(bars).where(isNotNull(bars.googleMapsUrl));
-  console.log(`Found ${allBars.length} bars with a Google Maps URL`);
+async function run() {
+  const allBars = await db.select().from(bars);
+  const barsWithLinks = allBars.filter(b => b.googleMapsUrl);
 
-  for (const bar of allBars) {
-    if (!bar.googleMapsUrl) continue;
+  console.log(`Found ${barsWithLinks.length} bars with Google Maps links`);
+
+  for (const bar of barsWithLinks) {
     try {
-      const result = await scrapeMapLink(bar.googleMapsUrl);
-      await db.update(bars)
-        .set({ lat: result.lat, lng: result.lng })
-        .where(eq(bars.id, bar.id));
-      console.log(`Updated ${bar.name}: ${result.lat}, ${result.lng}`);
+      console.log(`\nResolving: ${bar.name}`);
+      console.log(`  Link: ${bar.googleMapsUrl}`);
+
+      const result = await resolveGoogleMapsLink(bar.googleMapsUrl!);
+
+      await db.update(bars).set({
+        lat: result.lat,
+        lng: result.lng,
+        ...(result.websiteUrl && !bar.websiteUrl ? { websiteUrl: result.websiteUrl } : {}),
+      }).where(eq(bars.id, bar.id));
+
+      console.log(`  ✓ Updated: ${result.lat.toFixed(5)}, ${result.lng.toFixed(5)}${result.websiteUrl ? " + website" : ""}`);
+
+      await new Promise(r => setTimeout(r, 1500));
     } catch (e: any) {
-      console.error(`Failed ${bar.name}: ${e.message}`);
+      console.log(`  ✗ Failed: ${e.message}`);
     }
   }
 
-  console.log("Done.");
-  process.exit(0);
+  console.log("\nDone.");
 }
 
-main();
+run().catch(console.error);

@@ -5,7 +5,7 @@ import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { rateLimit } from "../rateLimit";
-import { scrapeMapLink } from "../utils/extractMapCoords";
+import { resolveGoogleMapsLink } from "../utils/extractMapCoords";
 
 export const adminRouter = router({
   resolveMapLink: publicProcedure
@@ -13,19 +13,10 @@ export const adminRouter = router({
     .mutation(async ({ input, ctx }) => {
       const limit = rateLimit(`mapslink:${ctx.ip}`, { windowMs: 60 * 60 * 1000, max: 20 });
       if (!limit.allowed) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many requests" });
-
       try {
-        return await scrapeMapLink(input.url);
+        return await resolveGoogleMapsLink(input.url);
       } catch (e: any) {
-        if (e instanceof TRPCError) throw e;
-        const msg: string = e?.message ?? "Failed to resolve link";
-        if (msg.includes("Could not extract") || msg.includes("Share → Copy link")) {
-          throw new TRPCError({ code: "NOT_FOUND", message: msg });
-        }
-        if (msg.includes("don't look like")) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: msg });
-        }
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to resolve link: " + msg });
+        throw new TRPCError({ code: "NOT_FOUND", message: e.message });
       }
     }),
 

@@ -4,6 +4,81 @@ import { trpc } from "../lib/trpc";
 
 interface Props { onBack: () => void; }
 
+function MapLinkTester() {
+  const resolveMapLink = trpc.admin.resolveMapLink.useMutation();
+  const [input, setInput] = useState('');
+  const [open, setOpen] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const resolve = async (url: string) => {
+    if (!url.trim()) return;
+    setLoading(true);
+    setResult(null);
+    setError('');
+    try {
+      const r = await resolveMapLink.mutateAsync({ url: url.trim() });
+      setResult(r);
+    } catch (e: any) {
+      setError(e.message ?? 'Failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <div className="px-3 mb-3">
+        <button onClick={() => setOpen(true)} className="w-full border border-dashed border-[var(--color-rule)] text-meta opacity-50 hover:opacity-80 py-2 text-xs uppercase">
+          TEST MAP LINK RESOLVER ↓
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-3 mb-3">
+      <div className="border border-[var(--color-rule)] p-3 space-y-2">
+        <div className="flex justify-between items-center">
+          <div className="text-eyebrow opacity-60">TEST MAP LINK RESOLVER</div>
+          <button onClick={() => { setOpen(false); setResult(null); setError(''); setInput(''); }} className="text-meta opacity-50 min-h-[44px] px-2">
+            <X size={12} />
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onPaste={e => { const t = e.clipboardData.getData('text'); if (t) { e.preventDefault(); setInput(t); resolve(t); } }}
+            placeholder="Paste or type a Google Maps link"
+            className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-xs"
+          />
+          <button
+            onClick={() => resolve(input)}
+            disabled={loading || !input.trim()}
+            className="bg-[var(--color-blaze)] text-[var(--color-paper)] px-3 text-xs font-display uppercase min-h-[44px] disabled:opacity-40"
+          >
+            {loading ? '…' : 'RESOLVE'}
+          </button>
+        </div>
+        {error && <div className="text-xs text-[var(--color-blaze)] leading-snug">{error}</div>}
+        {result && (
+          <div className="text-xs space-y-1 font-mono bg-[var(--color-ink-card)] p-2 border border-[var(--color-rule)]">
+            <div className="text-[var(--color-verified)]">✓ RESOLVED</div>
+            <div>LAT: {result.lat}</div>
+            <div>LNG: {result.lng}</div>
+            {result.placeName && <div>PLACE: {result.placeName}</div>}
+            {result.websiteUrl && <div>WEBSITE: {result.websiteUrl}</div>}
+            <div className="opacity-50 break-all">URL: {result.finalUrl}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function BarsManager({ onBack }: Props) {
   const { data: bars, refetch } = trpc.bars.getAll.useQuery();
   const deleteBar = trpc.admin.deleteBar.useMutation({ onSuccess: () => refetch() });
@@ -25,6 +100,8 @@ export default function BarsManager({ onBack }: Props) {
         <div className="text-eyebrow text-[var(--color-blaze)] mb-3">DIRECTORY · {(bars?.length ?? 0).toString().padStart(2,"0")} BARS</div>
         <h1 className="text-headline">BARS<br/>DIRECTORY</h1>
       </section>
+
+      <MapLinkTester />
 
       <div className="px-3 space-y-3">
         {sortedBars.map(bar => (
@@ -131,12 +208,11 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
   const [mapLinkStatus, setMapLinkStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [mapLinkMessage, setMapLinkMessage] = useState('');
 
-  const handleMapLinkPaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const text = e.clipboardData.getData('text');
-    if (!text) return;
+  const triggerMapLinkResolve = async (text: string) => {
+    if (!text.trim()) return;
     setMapLinkStatus('loading');
     try {
-      const result = await resolveMapLink.mutateAsync({ url: text });
+      const result = await resolveMapLink.mutateAsync({ url: text.trim() });
       setBarForm((prev: any) => ({
         ...prev,
         lat: result.lat,
@@ -145,16 +221,31 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
         ...(result.websiteUrl && !prev.websiteUrl ? { websiteUrl: result.websiteUrl } : {}),
       }));
       setMapLinkInput('');
-      const msg = `✓ COORDINATES SET: ${result.lat}, ${result.lng}${result.websiteUrl ? " · WEBSITE FOUND" : ""}`;
+      const label = result.placeName ? result.placeName.toUpperCase() : 'LOCATION';
+      const msg = `✓ ${label} SET — lat: ${result.lat.toFixed(4)}, lng: ${result.lng.toFixed(4)}${result.websiteUrl ? " · WEBSITE FOUND" : ""}`;
       setMapLinkMessage(msg);
       setMapLinkStatus('success');
-      setTimeout(() => setMapLinkStatus('idle'), 3000);
+      setTimeout(() => setMapLinkStatus('idle'), 5000);
     } catch (err: any) {
       const msg = err?.message ?? "COULDN'T READ LINK — CHECK IT'S A GOOGLE MAPS URL";
       setMapLinkMessage(msg);
       setMapLinkStatus('error');
-      setTimeout(() => setMapLinkStatus('idle'), 4000);
+      setTimeout(() => setMapLinkStatus('idle'), 5000);
     }
+  };
+
+  const handleMapLinkPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData('text');
+    if (!text) return;
+    e.preventDefault();
+    setMapLinkInput(text);
+    triggerMapLinkResolve(text);
+  };
+
+  const handleMapLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const text = e.target.value;
+    setMapLinkInput(text);
+    if (text.match(/^https?:\/\//)) triggerMapLinkResolve(text);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -232,18 +323,19 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
 
             {/* Google Maps link → auto-fill coordinates */}
             <div>
-              <div className="text-meta opacity-60 mb-1">PASTE GOOGLE MAPS LINK</div>
+              <div className="text-meta opacity-60 mb-1">PASTE GOOGLE MAPS SHARE LINK</div>
               <input
                 type="text"
                 value={mapLinkInput}
-                onChange={e => setMapLinkInput(e.target.value)}
+                onChange={handleMapLinkChange}
                 onPaste={handleMapLinkPaste}
-                placeholder="Paste a Google Maps share link to auto-fill coordinates"
+                placeholder="From Google Maps app: tap Share → Copy link → paste here"
                 className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm"
               />
-              {mapLinkStatus === 'loading' && <div className="text-meta opacity-60 mt-1 text-xs">RESOLVING…</div>}
-              {mapLinkStatus === 'success' && <div className="text-meta text-[var(--color-verified)] mt-1 text-xs">{mapLinkMessage}</div>}
-              {mapLinkStatus === 'error' && <div className="text-meta text-[var(--color-blaze)] mt-1 text-xs">{mapLinkMessage}</div>}
+              <div className="text-meta opacity-40 mt-1 text-xs">Works with mobile share links (maps.app.goo.gl/...) and full URLs</div>
+              {mapLinkStatus === 'loading' && <div className="text-meta opacity-60 mt-1 text-xs animate-pulse">FINDING LOCATION…</div>}
+              {mapLinkStatus === 'success' && <div className="text-meta text-[var(--color-verified)] mt-1 text-xs leading-snug">{mapLinkMessage}</div>}
+              {mapLinkStatus === 'error' && <div className="text-meta text-[var(--color-blaze)] mt-1 text-xs leading-snug">{mapLinkMessage}</div>}
             </div>
 
             {/* Lat / Lng (filled automatically from Maps link or edited manually) */}
