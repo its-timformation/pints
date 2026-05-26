@@ -14,6 +14,7 @@ export const bars = sqliteTable("bars", {
   servesGuinness: integer("serves_guinness", { mode: "boolean" }).default(false).notNull(),
   googleMapsUrl: text("google_maps_url"),
   websiteUrl: text("website_url"),
+  phoneNumber: text("phone_number"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 

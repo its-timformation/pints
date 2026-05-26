@@ -9,90 +9,151 @@ export const adminRouter = router({
   resolveMapLink: publicProcedure
     .input(z.object({ url: z.string() }))
     .mutation(async ({ input }) => {
+      const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 
       function extractCoordsFromUrl(url: string): { lat: number; lng: number } | null {
         const at = url.match(/@(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
         if (at) return { lat: parseFloat(at[1]), lng: parseFloat(at[2]) };
-
         const d3 = url.match(/!3d(-?\d{1,3}\.\d{4,})/);
         const d4 = url.match(/!4d(-?\d{1,3}\.\d{4,})/);
         if (d3 && d4) return { lat: parseFloat(d3[1]), lng: parseFloat(d4[1]) };
-
         const q = url.match(/[?&]q=(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
         if (q) return { lat: parseFloat(q[1]), lng: parseFloat(q[2]) };
-
-        const ll = url.match(/[?&]ll=(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
-        if (ll) return { lat: parseFloat(ll[1]), lng: parseFloat(ll[2]) };
-
         return null;
       }
 
-      function extractCoordsFromHtml(html: string): { lat: number; lng: number } | null {
-        // Scan all 6+ decimal coordinate pairs and return the first in the Alps region
-        const re = /(-?\d{1,3}\.\d{6,}),(-?\d{1,3}\.\d{6,})/g;
-        let m: RegExpExecArray | null;
-        while ((m = re.exec(html)) !== null) {
-          const lat = parseFloat(m[1]);
-          const lng = parseFloat(m[2]);
-          if (lat >= 43 && lat <= 48 && lng >= 4 && lng <= 12) {
-            return { lat, lng };
-          }
+      function extractPlaceNameFromUrl(url: string): string | null {
+        const m = url.match(/\/maps\/place\/([^/@?!]+)/);
+        if (!m) return null;
+        return decodeURIComponent(m[1].replace(/\+/g, ' ')).replace(/\s*[-,].+$/, '').trim();
+      }
+
+      async function followRedirect(url: string): Promise<string> {
+        try {
+          const res = await fetch(url, {
+            redirect: 'follow',
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+              'Accept': 'text/html,application/xhtml+xml,*/*;q=0.8',
+            },
+            signal: AbortSignal.timeout(8000),
+          });
+          return res.url;
+        } catch {
+          return url;
         }
-        return null;
       }
 
-      async function fetchFinalUrl(url: string, ua: string): Promise<{ finalUrl: string; html: string }> {
-        const response = await fetch(url, {
-          method: 'GET',
-          redirect: 'follow',
-          headers: {
-            'User-Agent': ua,
-            'Accept': 'text/html,application/xhtml+xml,*/*;q=0.8',
-            'Accept-Language': 'en-GB,en;q=0.9',
-          },
-          signal: AbortSignal.timeout(10000),
-        });
-        const html = await response.text();
-        return { finalUrl: response.url, html };
-      }
+      async function callPlacesAPI(query: string) {
+        if (!apiKey) return null;
+        try {
+          const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Key': apiKey,
+              'X-Goog-FieldMask': 'places.displayName,places.location,places.websiteUri,places.nationalPhoneNumber,places.regularOpeningHours,places.rating,places.googleMapsUri,places.formattedAddress',
+            },
+            body: JSON.stringify({
+              textQuery: query,
+              locationBias: {
+                circle: {
+                  center: { latitude: 46.1893, longitude: 6.7741 },
+                  radius: 60000.0,
+                },
+              },
+              maxResultCount: 1,
+            }),
+            signal: AbortSignal.timeout(8000),
+          });
+          if (!res.ok) {
+            console.error('Places API error:', res.status, await res.text());
+            return null;
+          }
+          const data = await res.json();
+          const place = data.places?.[0];
+          if (!place) return null;
+          const lat = place.location?.latitude;
+          const lng = place.location?.longitude;
+          if (!lat || !lng || lat < 43 || lat > 48 || lng < 4 || lng > 12) return null;
 
-      const MOBILE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
-      const DESKTOP_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+          let openingHours: string | null = null;
+          const periods = place.regularOpeningHours?.periods;
+          if (periods?.length > 0) {
+            const p = periods[0];
+            if (p.open && p.close) {
+              const oh = String(p.open.hour ?? 0).padStart(2, '0');
+              const om = String(p.open.minute ?? 0).padStart(2, '0');
+              const ch = String(p.close.hour ?? 0).padStart(2, '0');
+              const cm = String(p.close.minute ?? 0).padStart(2, '0');
+              openingHours = `${oh}:${om}-${ch}:${cm}`;
+            }
+          }
+
+          return {
+            lat,
+            lng,
+            websiteUrl: place.websiteUri ?? null,
+            phoneNumber: place.nationalPhoneNumber ?? null,
+            openingHours,
+            rating: place.rating ?? null,
+            googleMapsUrl: place.googleMapsUri ?? null,
+            fullName: place.displayName?.text ?? null,
+            address: place.formattedAddress ?? null,
+          };
+        } catch (e) {
+          console.error('Places API fetch failed:', e);
+          return null;
+        }
+      }
 
       try {
-        // Step 1: mobile UA
-        const { finalUrl: url1, html: html1 } = await fetchFinalUrl(input.url, MOBILE_UA);
-        console.log('Step 1 resolved to:', url1);
+        const finalUrl = await followRedirect(input.url);
+        const placeName = extractPlaceNameFromUrl(finalUrl);
 
-        let coords = extractCoordsFromUrl(url1);
-        let bestUrl = url1;
-
-        // Step 2: if we got a Place ID URL without coords, retry with desktop UA
-        if (!coords && url1.includes('/maps/place/')) {
-          const { finalUrl: url2, html: html2 } = await fetchFinalUrl(input.url, DESKTOP_UA);
-          console.log('Step 2 resolved to:', url2);
-          coords = extractCoordsFromUrl(url2);
-          if (url2.includes('/maps/')) bestUrl = url2;
-
-          // Step 3: HTML coordinate scan if URL still has no coords
-          if (!coords) {
-            coords = extractCoordsFromHtml(html2) ?? extractCoordsFromHtml(html1);
+        if (apiKey && placeName) {
+          const query = `${placeName} Portes du Soleil France Alps`;
+          const placeData = await callPlacesAPI(query);
+          if (placeData) {
+            return {
+              lat: placeData.lat,
+              lng: placeData.lng,
+              placeName: placeData.fullName ?? placeName,
+              address: placeData.address,
+              websiteUrl: placeData.websiteUrl,
+              phoneNumber: placeData.phoneNumber,
+              openingHours: placeData.openingHours,
+              rating: placeData.rating,
+              googleMapsUrl: placeData.googleMapsUrl ?? finalUrl,
+              finalUrl: placeData.googleMapsUrl ?? finalUrl,
+              source: 'places_api' as const,
+            };
           }
         }
 
-        if (!coords) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Could not extract coordinates. Try copying the URL from Google Maps on a desktop browser instead.',
-          });
+        const directCoords = extractCoordsFromUrl(finalUrl);
+        if (directCoords) {
+          return {
+            lat: directCoords.lat,
+            lng: directCoords.lng,
+            placeName,
+            address: null,
+            websiteUrl: null,
+            phoneNumber: null,
+            openingHours: null,
+            rating: null,
+            googleMapsUrl: finalUrl,
+            finalUrl,
+            source: 'url' as const,
+          };
         }
 
-        const placeMatch = bestUrl.match(/\/maps\/place\/([^/@?!]+)/);
-        const placeName = placeMatch
-          ? decodeURIComponent(placeMatch[1].replace(/\+/g, ' '))
-          : null;
-
-        return { lat: coords.lat, lng: coords.lng, placeName, finalUrl: bestUrl, websiteUrl: null };
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: placeName
+            ? `Could not find "${placeName}" — make sure you're sharing a specific bar, not a general search result.`
+            : 'Could not read this link. Try copying the URL from Google Maps on desktop instead.',
+        });
 
       } catch (e: any) {
         if (e instanceof TRPCError) throw e;
@@ -177,6 +238,9 @@ export const adminRouter = router({
       openingHours: z.string().optional(),
       imageUrl: z.string().optional(),
       servesGuinness: z.boolean().optional(),
+      googleMapsUrl: z.string().optional().nullable(),
+      websiteUrl: z.string().optional().nullable(),
+      phoneNumber: z.string().max(30).optional().nullable(),
     }))
     .mutation(async ({ input }) => {
       return db.insert(bars).values(input).returning();
@@ -237,6 +301,7 @@ export const adminRouter = router({
       servesGuinness: z.boolean().optional(),
       googleMapsUrl: z.string().optional().nullable(),
       websiteUrl: z.string().optional().nullable(),
+      phoneNumber: z.string().max(30).optional().nullable(),
     }))
     .mutation(async ({ input }) => {
       const { id, ...data } = input;

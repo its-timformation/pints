@@ -39,6 +39,186 @@ function SectionHeading({ groupKey, count }: { groupKey: string; count: number }
 }
 
 
+/* ── AddBarForm ──────────────────────────────────────────────── */
+function AddBarForm({ onCreated }: { onCreated: () => void }) {
+  const createBar = trpc.admin.createBar.useMutation({ onSuccess: () => { onCreated(); setForm(BLANK); setOpen(false); } });
+  const resolveMap = trpc.admin.resolveMapLink.useMutation();
+  const [open, setOpen] = useState(false);
+  const BLANK = { name: '', type: 'bar', area: '', address: '', lat: 0, lng: 0, openingHours: '', websiteUrl: '', phoneNumber: '', googleMapsUrl: '', servesGuinness: false };
+  const [form, setForm] = useState(BLANK);
+  const [mapInput, setMapInput] = useState('');
+  const [mapStep, setMapStep] = useState<'idle' | 'resolving' | 'success' | 'error'>('idle');
+  const [mapMessage, setMapMessage] = useState('');
+
+  const [openTime = '12:00', closeTime = '23:00'] = (form.openingHours || '12:00-23:00').split('-');
+
+  function applyResult(url: string, result: any) {
+    setForm((f: any) => ({
+      ...f,
+      lat: result.lat,
+      lng: result.lng,
+      googleMapsUrl: result.googleMapsUrl || url,
+      ...(result.placeName ? { name: result.placeName } : {}),
+      ...(result.websiteUrl ? { websiteUrl: result.websiteUrl } : {}),
+      ...(result.phoneNumber ? { phoneNumber: result.phoneNumber } : {}),
+      ...(result.openingHours ? { openingHours: result.openingHours } : {}),
+      ...(result.address ? { address: result.address } : {}),
+    }));
+    const parts = [
+      `✓ ${(result.placeName || 'LOCATION').toUpperCase()} FOUND`,
+      `${result.lat.toFixed(5)}, ${result.lng.toFixed(5)}`,
+      result.websiteUrl ? '· WEBSITE' : '',
+      result.phoneNumber ? '· PHONE' : '',
+      result.openingHours ? '· HOURS' : '',
+      result.rating ? `· ${result.rating}★` : '',
+    ].filter(Boolean).join(' ');
+    setMapStep('success');
+    setMapMessage(parts);
+    setMapInput('');
+    setTimeout(() => setMapStep('idle'), 6000);
+  }
+
+  async function handlePaste(pasted: string) {
+    const url = pasted.trim();
+    if (!url || !url.match(/google\.com\/maps|maps\.app\.goo\.gl|maps\.google\.com/i)) {
+      setMapStep('error');
+      setMapMessage("This doesn't look like a Google Maps link.");
+      return;
+    }
+    setMapStep('resolving');
+    setMapMessage('FINDING LOCATION...');
+    try {
+      const result = await resolveMap.mutateAsync({ url });
+      applyResult(result.finalUrl, result);
+    } catch (e: any) {
+      setMapStep('error');
+      setMapMessage(e?.message || 'COULD NOT READ LINK');
+    }
+  }
+
+  if (!open) {
+    return (
+      <div className="px-3 mb-4">
+        <button
+          onClick={() => setOpen(true)}
+          className="w-full border border-[var(--color-blaze)] text-[var(--color-blaze)] font-display uppercase py-3 flex items-center justify-center gap-2 hover:bg-[var(--color-blaze)] hover:text-[var(--color-paper)] transition-colors"
+        >
+          + ADD NEW BAR
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-3 mb-4">
+      <div className="border border-[var(--color-blaze)] p-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-eyebrow text-[var(--color-blaze)]">NEW BAR</span>
+          <button onClick={() => { setOpen(false); setForm(BLANK); }} className="text-meta opacity-60 min-h-[44px] px-2">CANCEL</button>
+        </div>
+
+        {/* Maps paste field at top */}
+        <div className="space-y-1.5">
+          <div className="text-eyebrow opacity-60">GOOGLE MAPS LINK — AUTO-FILLS EVERYTHING BELOW</div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={mapInput}
+              onChange={e => setMapInput(e.target.value)}
+              onPaste={e => { const p = e.clipboardData.getData('text'); e.preventDefault(); setMapInput(p); setTimeout(() => handlePaste(p), 0); }}
+              placeholder="Paste a Google Maps link to auto-fill"
+              className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 text-[var(--color-paper)] text-sm"
+              disabled={mapStep === 'resolving'}
+            />
+            <button
+              type="button"
+              onClick={() => handlePaste(mapInput)}
+              disabled={!mapInput.trim() || mapStep === 'resolving'}
+              className="shrink-0 border border-[var(--color-rule)] px-3 py-2.5 text-meta disabled:opacity-30 hover:border-[var(--color-blaze)] transition-colors"
+            >
+              {mapStep === 'resolving' ? '…' : 'USE'}
+            </button>
+          </div>
+          {mapStep === 'resolving' && <div className="text-meta opacity-60 animate-pulse">{mapMessage}</div>}
+          {mapStep === 'success' && <div className="text-meta text-[var(--color-verified)]">{mapMessage}</div>}
+          {mapStep === 'error' && <div className="text-meta text-[var(--color-blaze)]">{mapMessage}</div>}
+        </div>
+
+        <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+          placeholder="Bar name" className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px]" />
+
+        <AreaTypeahead value={form.area} onChange={v => setForm({ ...form, area: v })} />
+
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <div className="text-meta opacity-60 mb-1">OPENS</div>
+            <select value={openTime} onChange={e => setForm({ ...form, openingHours: `${e.target.value}-${closeTime}` })}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px]">
+              {TIME_OPTIONS.map(t => <option key={t} value={t} className="bg-[var(--color-ink)]">{t}</option>)}
+            </select>
+          </div>
+          <div className="flex-1">
+            <div className="text-meta opacity-60 mb-1">CLOSES</div>
+            <select value={closeTime} onChange={e => setForm({ ...form, openingHours: `${openTime}-${e.target.value}` })}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px]">
+              {TIME_OPTIONS.map(t => <option key={t} value={t} className="bg-[var(--color-ink)]">{t}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
+          className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px]">
+          {['bar', 'pub', 'restaurant-bar', 'slope-side', 'club'].map(t => <option key={t} value={t} className="bg-[var(--color-ink)]">{t}</option>)}
+        </select>
+
+        <label className="flex items-center gap-2 py-2 cursor-pointer">
+          <input type="checkbox" checked={form.servesGuinness} onChange={e => setForm({ ...form, servesGuinness: e.target.checked })} className="w-4 h-4" />
+          <span className="text-meta">POURS GUINNESS</span>
+        </label>
+
+        <input value={form.websiteUrl} onChange={e => setForm({ ...form, websiteUrl: e.target.value })}
+          placeholder="Website URL (auto-filled)" className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm" />
+
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <div className="text-meta opacity-60 mb-1">LAT</div>
+            <input type="number" step="0.00001" value={form.lat || ''} onChange={e => setForm({ ...form, lat: parseFloat(e.target.value) })}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2" />
+          </div>
+          <div className="flex-1">
+            <div className="text-meta opacity-60 mb-1">LNG</div>
+            <input type="number" step="0.00001" value={form.lng || ''} onChange={e => setForm({ ...form, lng: parseFloat(e.target.value) })}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2" />
+          </div>
+        </div>
+
+        <button
+          onClick={() => {
+            if (!form.name || !form.lat || !form.lng) return alert('Name and coordinates are required.');
+            createBar.mutate({
+              name: form.name,
+              type: form.type,
+              area: form.area || undefined,
+              address: form.address || undefined,
+              lat: form.lat,
+              lng: form.lng,
+              openingHours: form.openingHours || undefined,
+              servesGuinness: form.servesGuinness,
+              googleMapsUrl: form.googleMapsUrl || null,
+              websiteUrl: form.websiteUrl || null,
+              phoneNumber: form.phoneNumber || null,
+            });
+          }}
+          disabled={createBar.isPending}
+          className="w-full bg-[var(--color-blaze)] text-[var(--color-paper)] py-3 font-display uppercase disabled:opacity-50"
+        >
+          {createBar.isPending ? 'CREATING…' : 'CREATE BAR'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── BarsManager ─────────────────────────────────────────────── */
 export default function BarsManager({ onBack }: Props) {
   const { data: bars, refetch } = trpc.bars.getAll.useQuery();
@@ -132,6 +312,9 @@ export default function BarsManager({ onBack }: Props) {
         </div>
         <h1 className="text-headline">BARS<br />DIRECTORY</h1>
       </section>
+
+      {/* Add new bar */}
+      <AddBarForm onCreated={refetch} />
 
       {/* Search + typeahead */}
       <div className="px-3 mb-2" ref={searchRef}>
@@ -356,12 +539,32 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
   const [mapInput, setMapInput] = useState('');
   const [mapMessage, setMapMessage] = useState('');
 
-  function applyCoords(url: string, coords: { lat: number; lng: number }) {
-    setBarForm((f: any) => ({ ...f, lat: coords.lat, lng: coords.lng, googleMapsUrl: url }));
+  function applyCoords(url: string, result: any) {
+    setBarForm((f: any) => ({
+      ...f,
+      lat: result.lat,
+      lng: result.lng,
+      googleMapsUrl: result.googleMapsUrl || url,
+      ...(result.websiteUrl && !f.websiteUrl ? { websiteUrl: result.websiteUrl } : {}),
+      ...(result.phoneNumber && !f.phoneNumber ? { phoneNumber: result.phoneNumber } : {}),
+      ...(result.openingHours && !f.openingHours ? { openingHours: result.openingHours } : {}),
+      ...(result.address && !f.address ? { address: result.address } : {}),
+      ...(result.placeName && !f.name ? { name: result.placeName } : {}),
+    }));
+
+    const parts = [
+      `✓ ${(result.placeName || 'LOCATION').toUpperCase()} FOUND`,
+      `${result.lat.toFixed(5)}, ${result.lng.toFixed(5)}`,
+      result.websiteUrl ? '· WEBSITE' : '',
+      result.phoneNumber ? '· PHONE' : '',
+      result.openingHours ? '· HOURS' : '',
+      result.rating ? `· ${result.rating}★` : '',
+    ].filter(Boolean).join(' ');
+
     setMapStep('success');
-    setMapMessage(`✓ LOCATION SET: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`);
+    setMapMessage(parts);
     setMapInput('');
-    setTimeout(() => setMapStep('idle'), 4000);
+    setTimeout(() => setMapStep('idle'), 6000);
   }
 
   async function handleFirstPaste(pasted: string) {
@@ -376,10 +579,7 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
     setMapMessage('FINDING LOCATION...');
     try {
       const result = await resolveMap.mutateAsync({ url });
-      applyCoords(result.finalUrl, { lat: result.lat, lng: result.lng });
-      if (result.placeName) {
-        setMapMessage(`✓ LOCATION SET: ${result.lat.toFixed(5)}, ${result.lng.toFixed(5)} · ${result.placeName.toUpperCase()}`);
-      }
+      applyCoords(result.finalUrl, result);
     } catch (e: any) {
       setMapStep('error');
       setMapMessage(e?.message || 'COULD NOT READ LINK — try copying the URL from your browser address bar instead.');
@@ -515,9 +715,11 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
                 updateBar.mutate({
                   id: barId, name: barForm.name, area: barForm.area, openingHours: barForm.openingHours,
                   type: barForm.type, lat: barForm.lat, lng: barForm.lng, imageUrl: barForm.imageUrl,
+                  address: barForm.address ?? null,
                   servesGuinness: !!barForm.servesGuinness,
                   googleMapsUrl: barForm.googleMapsUrl ?? null,
                   websiteUrl: barForm.websiteUrl ?? null,
+                  phoneNumber: barForm.phoneNumber ?? null,
                 });
                 setEditingBar(false);
               }}
