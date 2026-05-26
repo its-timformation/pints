@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "re
 import { useEffect, useState } from "react";
 import { useAppStore } from "./lib/store";
 import { PinSentry } from "./components/PinSentry";
+import { BuildNotification } from "./components/BuildNotification";
 
 import Dashboard from "./pages/Dashboard";
 import MapPage from "./pages/MapPage";
@@ -211,6 +212,7 @@ function Shell() {
       </main>
       <BottomNav />
       {showSentry && <PinSentry onUnlock={onUnlock} onCancel={() => setShowSentry(false)} />}
+      <BuildNotification isAdmin={adminActive} />
     </div>
   );
 }

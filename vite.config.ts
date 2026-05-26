@@ -18,4 +18,12 @@ export default defineConfig({
     outDir: "../dist/public",
     emptyOutDir: true,
   },
+  define: {
+    __BUILD_HASH__: JSON.stringify(
+      process.env.RENDER_GIT_COMMIT?.slice(0, 7) ||
+      process.env.GIT_COMMIT?.slice(0, 7) ||
+      'local'
+    ),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
 });
