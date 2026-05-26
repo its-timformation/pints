@@ -44,11 +44,11 @@ const STAPLE_DRINKS = [
  */
 const NEW_BARS = [
   /* ---------------- AVORIAZ (centre ~46.1908, 6.7720) ---------------- */
-  { name: "La Folie Douce Avoriaz",   type: "slope-side",     area: "Avoriaz",  address: "Plateau d'Avoriaz",       lat: 46.19366, lng: 6.77384, openingHours: "12:00-18:00", servesGuinness: false },
-  { name: "Le Tavaillon",             type: "pub",            area: "Avoriaz",  address: "Place des Dromonts",      lat: 46.19050, lng: 6.77180, openingHours: "09:00-02:00", servesGuinness: true  },
-  { name: "Le Chapka",                type: "restaurant-bar", area: "Avoriaz",  address: "Place des Ruches",        lat: 46.19100, lng: 6.77200, openingHours: "09:00-00:00", servesGuinness: false },
-  { name: "Le Fantastic",             type: "restaurant-bar", area: "Avoriaz",  address: "Centre, Avoriaz",         lat: 46.19150, lng: 6.77210, openingHours: "10:00-23:00", servesGuinness: false },
-  { name: "Globe Trotter Café",       type: "restaurant-bar", area: "Avoriaz",  address: "Centre station",          lat: 46.19120, lng: 6.77190, openingHours: "07:00-02:00", servesGuinness: true  },
+  { name: "La Folie Douce Avoriaz",   type: "slope-side",     area: "Avoriaz",  address: "560A Route de l'Alpage, Avoriaz 1800",           lat: 46.19366, lng: 6.77384, openingHours: "12:00-18:00", servesGuinness: false },
+  { name: "Le Tavaillon",             type: "pub",            area: "Avoriaz",  address: "Place des Dromonts",                             lat: 46.19080, lng: 6.77120, openingHours: "09:00-02:00", servesGuinness: true  },
+  { name: "Le Chapka",                type: "restaurant-bar", area: "Avoriaz",  address: "Rue du Douchka, Quartier La Falaise, Avoriaz",   lat: 46.18920, lng: 6.77180, openingHours: "09:00-00:00", servesGuinness: false },
+  { name: "Le Fantastic",             type: "restaurant-bar", area: "Avoriaz",  address: "Place Centrale, Avoriaz 1800",                   lat: 46.19150, lng: 6.77080, openingHours: "10:00-23:00", servesGuinness: false },
+  { name: "Globe Trotter Café",       type: "restaurant-bar", area: "Avoriaz",  address: "47 Place du Snow, Avoriaz 1800",                 lat: 46.19128, lng: 6.77055, openingHours: "07:00-02:00", servesGuinness: true  },
   { name: "Le Shooters",              type: "club",           area: "Avoriaz",  address: "Centre station",          lat: 46.19220, lng: 6.77150, openingHours: "22:00-05:00", servesGuinness: false },
   { name: "The Place",                type: "bar",            area: "Avoriaz",  address: "Centre, Avoriaz",         lat: 46.19170, lng: 6.77220, openingHours: "16:00-02:00", servesGuinness: false },
   { name: "Le Yak",                   type: "club",           area: "Avoriaz",  address: "Place des Dromonts",      lat: 46.19080, lng: 6.77300, openingHours: "00:00-05:00", servesGuinness: false },
@@ -56,7 +56,7 @@ const NEW_BARS = [
   { name: "Le R Concept Store & Tasting Bar", type: "bar",    area: "Avoriaz",  address: "Place des Dromonts",      lat: 46.19070, lng: 6.77230, openingHours: "16:00-23:00", servesGuinness: false },
   { name: "Happy Hours Bar",          type: "slope-side",     area: "Ardent",   address: "Foot of Ardent gondola",  lat: 46.20550, lng: 6.76170, openingHours: "14:00-21:00", servesGuinness: false },
   { name: "Les Trappeurs",            type: "bar",            area: "Avoriaz",  address: "Centre, Avoriaz",         lat: 46.19140, lng: 6.77170, openingHours: "16:00-02:00", servesGuinness: false },
-  { name: "Wild Horse Pub",           type: "pub",            area: "Avoriaz",  address: "Centre station",          lat: 46.19230, lng: 6.77130, openingHours: "16:00-02:00", servesGuinness: true  },
+  { name: "Wild Horse Pub",           type: "pub",            area: "Avoriaz",  address: "Centre station",          lat: 46.19200, lng: 6.77040, openingHours: "16:00-02:00", servesGuinness: true  },
 
   /* ---------------- MORZINE (centre ~46.1789, 6.7089) ---------------- */
   { name: "Le Tremplin",              type: "slope-side",     area: "Morzine",  address: "Pleney piste, Morzine",   lat: 46.17950, lng: 6.70820, openingHours: "15:00-23:00", servesGuinness: false },

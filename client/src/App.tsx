@@ -93,6 +93,7 @@ function Header({ onWordmarkTap }: { onWordmarkTap: () => void; }) {
 /* ---------------------- BOTTOM NAV ---------------------- */
 function BottomNav() {
   const location = useLocation();
+  if (location.pathname.startsWith("/admin")) return null;
   const items = [
     { to: "/", label: "DASHBOARD", icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -197,7 +198,7 @@ function Shell() {
     <div className="min-h-screen flex flex-col">
       <TickerBand adminActive={adminActive && location.pathname.startsWith("/admin")} onAdminTap={onAdminTap} />
       <Header onWordmarkTap={onWordmarkTap} />
-      <main className="flex-1 max-w-md w-full mx-auto pb-4">
+      <main className="flex-1 max-w-md w-full mx-auto">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/map" element={<MapPage />} />
