@@ -15,6 +15,7 @@ export const bars = sqliteTable("bars", {
   googleMapsUrl: text("google_maps_url"),
   websiteUrl: text("website_url"),
   phoneNumber: text("phone_number"),
+  rating: real("rating"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 

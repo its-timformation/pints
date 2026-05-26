@@ -318,6 +318,7 @@ export const adminRouter = router({
       googleMapsUrl: z.string().optional().nullable(),
       websiteUrl: z.string().optional().nullable(),
       phoneNumber: z.string().max(30).optional().nullable(),
+      rating: z.number().optional().nullable(),
     }))
     .mutation(async ({ input }) => {
       const { id, ...data } = input;

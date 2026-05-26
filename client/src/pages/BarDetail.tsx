@@ -74,6 +74,21 @@ export default function BarDetail() {
             </span>
           </div>
         </div>
+        {bar.rating && (
+          <div className="mt-2 flex items-center gap-1.5">
+            <div className="flex items-center gap-0.5">
+              {[1,2,3,4,5].map(i => (
+                <svg key={i} width="12" height="12" viewBox="0 0 24 24"
+                  fill={i <= Math.round(bar.rating!) ? "currentColor" : "none"}
+                  stroke="currentColor" strokeWidth="2"
+                  className="opacity-90">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              ))}
+            </div>
+            <span className="text-meta opacity-90">{bar.rating.toFixed(1)} / 5</span>
+          </div>
+        )}
       </section>
 
       {/* Happy hour ribbon */}

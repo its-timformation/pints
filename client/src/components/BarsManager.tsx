@@ -720,6 +720,7 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
                   googleMapsUrl: barForm.googleMapsUrl ?? null,
                   websiteUrl: barForm.websiteUrl ?? null,
                   phoneNumber: barForm.phoneNumber ?? null,
+                  rating: barForm.rating ?? null,
                 });
                 setEditingBar(false);
               }}
