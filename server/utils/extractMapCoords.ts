@@ -121,7 +121,7 @@ async function extractWebsiteFromHtml(mapsUrl: string): Promise<string | null> {
 }
 
 export async function resolveGoogleMapsLink(url: string): Promise<MapLinkResult> {
-  if (!url.match(/google\.com\/maps|maps\.app\.goo\.gl|goo\.gl\/maps/i)) {
+  if (!url.match(/google\.[a-z.]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps/i)) {
     throw new Error(
       "This doesn't look like a Google Maps link. Share links look like: https://maps.app.goo.gl/..."
     );
