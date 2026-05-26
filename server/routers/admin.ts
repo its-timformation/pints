@@ -4,20 +4,50 @@ import { bars, drinks, deals, submissions, barReports, editorsPick } from "../..
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { rateLimitOrSkip } from "../rateLimit";
-import { resolveGoogleMapsLink } from "../utils/extractMapCoords";
-
 export const adminRouter = router({
   resolveMapLink: publicProcedure
     .input(z.object({ url: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      const limit = rateLimitOrSkip(`mapslink:${ctx.ip}`, { windowMs: 60 * 60 * 1000, max: 200 }, true);
-      if (!limit.allowed) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many requests" });
-      try {
-        return await resolveGoogleMapsLink(input.url);
-      } catch (e: any) {
-        throw new TRPCError({ code: "NOT_FOUND", message: e.message });
+    .mutation(async ({ input }) => {
+      const url = input.url;
+
+      let lat: number | null = null;
+      let lng: number | null = null;
+
+      // Pattern 1: /@lat,lng,zoom
+      const atSign = url.match(/@(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
+      if (atSign) { lat = parseFloat(atSign[1]); lng = parseFloat(atSign[2]); }
+
+      // Pattern 2: !3d lat !4d lng
+      if (!lat) {
+        const data = url.match(/!3d(-?\d{1,3}\.\d{4,}).*?!4d(-?\d{1,3}\.\d{4,})/);
+        if (data) { lat = parseFloat(data[1]); lng = parseFloat(data[2]); }
       }
+
+      // Pattern 3: ?q=lat,lng
+      if (!lat) {
+        const q = url.match(/[?&]q=(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
+        if (q) { lat = parseFloat(q[1]); lng = parseFloat(q[2]); }
+      }
+
+      // Pattern 4: ll=lat,lng
+      if (!lat) {
+        const ll = url.match(/[?&]ll=(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
+        if (ll) { lat = parseFloat(ll[1]); lng = parseFloat(ll[2]); }
+      }
+
+      if (!lat || !lng) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No coordinates found in URL. Make sure to paste the full Google Maps URL (not the short link).",
+        });
+      }
+
+      const placeMatch = url.match(/\/maps\/place\/([^/@]+)/);
+      const placeName = placeMatch
+        ? decodeURIComponent(placeMatch[1].replace(/\+/g, " "))
+        : null;
+
+      return { lat, lng, placeName, finalUrl: url, websiteUrl: null };
     }),
 
   getSubmissions: publicProcedure

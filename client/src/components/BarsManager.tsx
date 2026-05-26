@@ -433,44 +433,41 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
   const [mapLinkStatus, setMapLinkStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [mapLinkMessage, setMapLinkMessage] = useState('');
 
-  const triggerMapLinkResolve = async (text: string) => {
-    if (!text.trim()) return;
+  const handleMapLinkResolve = async (rawUrl: string) => {
+    if (!rawUrl.trim()) return;
     setMapLinkStatus('loading');
+    setMapLinkMessage('RESOLVING LINK…');
+
+    // Short links can't be resolved server-side — instruct user to expand first
+    if (/maps\.app\.goo\.gl|goo\.gl\/maps/i.test(rawUrl.trim())) {
+      setMapLinkStatus('error');
+      setMapLinkMessage(
+        'SHORT LINK DETECTED — Open this link in your browser, wait for it to load, ' +
+        'then copy the URL from the address bar. It should start with google.com/maps and contain the coordinates.'
+      );
+      return;
+    }
+
     try {
-      const result = await resolveMapLink.mutateAsync({ url: text.trim() });
+      const result = await resolveMapLink.mutateAsync({ url: rawUrl.trim() });
       setBarForm((prev: any) => ({
         ...prev,
         lat: result.lat,
         lng: result.lng,
-        googleMapsUrl: result.finalUrl,
+        googleMapsUrl: rawUrl.trim(),
         ...(result.websiteUrl && !prev.websiteUrl ? { websiteUrl: result.websiteUrl } : {}),
       }));
       setMapLinkInput('');
-      const label = result.placeName ? result.placeName.toUpperCase() : 'LOCATION';
-      const msg = `✓ ${label} SET — lat: ${result.lat.toFixed(4)}, lng: ${result.lng.toFixed(4)}${result.websiteUrl ? " · WEBSITE FOUND" : ""}`;
-      setMapLinkMessage(msg);
+      setMapLinkMessage(
+        `✓ COORDINATES SET: ${result.lat.toFixed(5)}, ${result.lng.toFixed(5)}` +
+        (result.placeName ? ` · ${result.placeName.toUpperCase()}` : '')
+      );
       setMapLinkStatus('success');
       setTimeout(() => setMapLinkStatus('idle'), 5000);
     } catch (err: any) {
-      const msg = err?.message ?? "COULDN'T READ LINK — CHECK IT'S A GOOGLE MAPS URL";
-      setMapLinkMessage(msg);
+      setMapLinkMessage(err?.message ?? "COULDN'T READ LINK — PASTE A FULL GOOGLE MAPS URL");
       setMapLinkStatus('error');
-      setTimeout(() => setMapLinkStatus('idle'), 5000);
     }
-  };
-
-  const handleMapLinkPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const text = e.clipboardData.getData('text');
-    if (!text) return;
-    e.preventDefault();
-    setMapLinkInput(text);
-    triggerMapLinkResolve(text);
-  };
-
-  const handleMapLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const text = e.target.value;
-    setMapLinkInput(text);
-    if (text.match(/^https?:\/\//)) triggerMapLinkResolve(text);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -535,20 +532,40 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
               <span className="text-meta">POURS GUINNESS</span>
             </label>
 
-            <div>
-              <div className="text-meta opacity-60 mb-1">PASTE GOOGLE MAPS SHARE LINK</div>
-              <input
-                type="text"
-                value={mapLinkInput}
-                onChange={handleMapLinkChange}
-                onPaste={handleMapLinkPaste}
-                placeholder="From Google Maps app: tap Share → Copy link → paste here"
-                className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm"
-              />
-              <div className="text-meta opacity-40 mt-1 text-xs">Works with mobile share links (maps.app.goo.gl/...) and full URLs</div>
-              {mapLinkStatus === 'loading' && <div className="text-meta opacity-60 mt-1 text-xs animate-pulse">FINDING LOCATION…</div>}
-              {mapLinkStatus === 'success' && <div className="text-meta text-[var(--color-verified)] mt-1 text-xs leading-snug">{mapLinkMessage}</div>}
-              {mapLinkStatus === 'error' && <div className="text-meta text-[var(--color-blaze)] mt-1 text-xs leading-snug">{mapLinkMessage}</div>}
+            <div className="space-y-1.5">
+              <div className="text-meta opacity-60 mb-1">PASTE GOOGLE MAPS LINK</div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={mapLinkInput}
+                  onChange={e => setMapLinkInput(e.target.value)}
+                  onPaste={e => {
+                    const pasted = e.clipboardData.getData('text');
+                    setTimeout(() => handleMapLinkResolve(pasted), 0);
+                  }}
+                  placeholder="Paste a full Google Maps URL here"
+                  className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 text-[var(--color-paper)]"
+                />
+                <button
+                  onClick={() => handleMapLinkResolve(mapLinkInput)}
+                  disabled={!mapLinkInput.trim() || mapLinkStatus === 'loading'}
+                  className="shrink-0 border border-[var(--color-rule)] px-3 py-2.5 text-meta disabled:opacity-30"
+                >
+                  {mapLinkStatus === 'loading' ? '…' : 'RESOLVE'}
+                </button>
+              </div>
+              {mapLinkStatus !== 'idle' && (
+                <div className={`text-meta px-2 py-1.5 leading-snug ${
+                  mapLinkStatus === 'success' ? 'text-[var(--color-verified)]' :
+                  mapLinkStatus === 'error' ? 'text-[var(--color-blaze)]' :
+                  'text-[var(--color-paper)] opacity-60'
+                }`}>
+                  {mapLinkMessage}
+                </div>
+              )}
+              <div className="text-meta opacity-40 leading-relaxed">
+                DESKTOP: maps.google.com → find bar → copy URL from address bar. MOBILE: Share → Copy link → if you get a maps.app.goo.gl link, open it in your browser first, then copy from the address bar.
+              </div>
             </div>
 
             <div className="flex gap-2">
