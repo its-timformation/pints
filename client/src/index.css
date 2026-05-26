@@ -192,7 +192,7 @@
 }
 .leaflet-popup-close-button { display: none !important; }
 .custom-popup .leaflet-popup-content { margin: 0; padding: 0; width: 100% !important; min-width: 200px; }
-.leaflet-container { background: var(--color-ink); }
+.leaflet-container { height: 100%; width: 100%; background: var(--color-ink); }
 .leaflet-control-zoom { display: none !important; }
 
 /* Selection */
