@@ -64,10 +64,11 @@ function TickerBand({ adminActive, onAdminTap }: { adminActive: boolean; onAdmin
 /* ---------------------- HEADER ---------------------- */
 function Header({ onWordmarkTap }: { onWordmarkTap: () => void; }) {
   const { currency, setCurrency, stoutsMode } = useAppStore();
+  const navigate = useNavigate();
   return (
     <header className="sticky top-0 z-50 bg-[var(--color-ink)] hairline-b">
       <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-        <button onClick={onWordmarkTap} className="!min-h-0 group" aria-label="Pints du Soleil home">
+        <button onClick={() => { onWordmarkTap(); navigate("/"); }} className="!min-h-0 group" aria-label="Pints du Soleil home">
           <span className="font-display text-xl uppercase leading-none text-[var(--color-paper)] tracking-wide">
             {stoutsMode ? "STOUTS" : "PINTS"}<span className="text-[var(--color-blaze)]">·</span>DU<span className="text-[var(--color-blaze)]">·</span>SOLEIL
           </span>
