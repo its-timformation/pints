@@ -44,67 +44,80 @@ export const adminRouter = router({
         }
       }
 
-      async function callPlacesAPI(query: string) {
+      async function callPlacesAPI(queries: string[]) {
         if (!apiKey) return null;
-        try {
-          const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Goog-Api-Key': apiKey,
-              'X-Goog-FieldMask': 'places.displayName,places.location,places.websiteUri,places.nationalPhoneNumber,places.regularOpeningHours,places.rating,places.googleMapsUri,places.formattedAddress',
-            },
-            body: JSON.stringify({
-              textQuery: query,
-              locationBias: {
-                circle: {
-                  center: { latitude: 46.1893, longitude: 6.7741 },
-                  radius: 60000.0,
-                },
+
+        for (const query of queries) {
+          try {
+            console.log('Places API query:', query);
+            const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': apiKey,
+                'X-Goog-FieldMask': 'places.displayName,places.location,places.websiteUri,places.nationalPhoneNumber,places.regularOpeningHours,places.rating,places.googleMapsUri,places.formattedAddress',
               },
-              maxResultCount: 1,
-            }),
-            signal: AbortSignal.timeout(8000),
-          });
-          if (!res.ok) {
-            console.error('Places API error:', res.status, await res.text());
-            return null;
-          }
-          const data = await res.json();
-          const place = data.places?.[0];
-          if (!place) return null;
-          const lat = place.location?.latitude;
-          const lng = place.location?.longitude;
-          if (!lat || !lng || lat < 43 || lat > 48 || lng < 4 || lng > 12) return null;
+              body: JSON.stringify({
+                textQuery: query,
+                locationBias: {
+                  circle: {
+                    center: { latitude: 46.1893, longitude: 6.7741 },
+                    radius: 60000.0,
+                  },
+                },
+                maxResultCount: 1,
+              }),
+              signal: AbortSignal.timeout(8000),
+            });
 
-          let openingHours: string | null = null;
-          const periods = place.regularOpeningHours?.periods;
-          if (periods?.length > 0) {
-            const p = periods[0];
-            if (p.open && p.close) {
-              const oh = String(p.open.hour ?? 0).padStart(2, '0');
-              const om = String(p.open.minute ?? 0).padStart(2, '0');
-              const ch = String(p.close.hour ?? 0).padStart(2, '0');
-              const cm = String(p.close.minute ?? 0).padStart(2, '0');
-              openingHours = `${oh}:${om}-${ch}:${cm}`;
+            if (!res.ok) {
+              console.error('Places API error:', res.status, await res.text());
+              continue;
             }
-          }
 
-          return {
-            lat,
-            lng,
-            websiteUrl: place.websiteUri ?? null,
-            phoneNumber: place.nationalPhoneNumber ?? null,
-            openingHours,
-            rating: place.rating ?? null,
-            googleMapsUrl: place.googleMapsUri ?? null,
-            fullName: place.displayName?.text ?? null,
-            address: place.formattedAddress ?? null,
-          };
-        } catch (e) {
-          console.error('Places API fetch failed:', e);
-          return null;
+            const data = await res.json();
+            const place = data.places?.[0];
+            if (!place) {
+              console.log('No results for query:', query);
+              continue;
+            }
+
+            const lat = place.location?.latitude;
+            const lng = place.location?.longitude;
+            if (!lat || !lng || lat < 43 || lat > 48 || lng < 4 || lng > 12) {
+              console.log('Coords out of Alps range:', lat, lng);
+              continue;
+            }
+
+            let openingHours: string | null = null;
+            const periods = place.regularOpeningHours?.periods;
+            if (periods?.length > 0) {
+              const p = periods[0];
+              if (p.open && p.close) {
+                const oh = String(p.open.hour ?? 0).padStart(2, '0');
+                const om = String(p.open.minute ?? 0).padStart(2, '0');
+                const ch = String(p.close.hour ?? 0).padStart(2, '0');
+                const cm = String(p.close.minute ?? 0).padStart(2, '0');
+                openingHours = `${oh}:${om}-${ch}:${cm}`;
+              }
+            }
+
+            console.log('Places API success with query:', query, '→', place.displayName?.text, lat, lng);
+            return {
+              lat, lng,
+              websiteUrl: place.websiteUri ?? null,
+              phoneNumber: place.nationalPhoneNumber ?? null,
+              openingHours,
+              rating: place.rating ?? null,
+              googleMapsUrl: place.googleMapsUri ?? null,
+              fullName: place.displayName?.text ?? null,
+              address: place.formattedAddress ?? null,
+            };
+          } catch (e) {
+            console.error('Places API fetch failed for query:', query, e);
+          }
         }
+        return null;
       }
 
       try {
@@ -112,8 +125,19 @@ export const adminRouter = router({
         const placeName = extractPlaceNameFromUrl(finalUrl);
 
         if (apiKey && placeName) {
-          const query = `${placeName} Portes du Soleil France Alps`;
-          const placeData = await callPlacesAPI(query);
+          const nameVariants = [
+            placeName,
+            placeName.replace(/^(Le|La|Les|L')\s+/i, ''),
+            placeName.replace(/\s*[-,–].*$/, '').trim(),
+          ].filter((v, i, arr) => v && arr.indexOf(v) === i);
+
+          const queries = [
+            ...nameVariants.map(n => `${n} Avoriaz bar`),
+            ...nameVariants.map(n => `${n} French Alps bar`),
+            ...nameVariants.map(n => `${n} bar`),
+          ];
+
+          const placeData = await callPlacesAPI(queries);
           if (placeData) {
             return {
               lat: placeData.lat,
@@ -151,7 +175,7 @@ export const adminRouter = router({
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: placeName
-            ? `Could not find "${placeName}" — make sure you're sharing a specific bar, not a general search result.`
+            ? `Could not find "${placeName}" on Google Places. Try searching for the bar directly on maps.google.com, clicking on it, then sharing that link.`
             : 'Could not read this link. Try copying the URL from Google Maps on desktop instead.',
         });
 
