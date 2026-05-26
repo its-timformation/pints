@@ -13,6 +13,14 @@ function Root() {
       links: [
         httpBatchLink({
           url: "/api/trpc",
+          headers: () => {
+            try {
+              const token = sessionStorage.getItem("pds-admin-token");
+              return token ? { "x-admin-token": token } : {};
+            } catch {
+              return {};
+            }
+          },
         }),
       ],
     }),

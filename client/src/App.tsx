@@ -180,8 +180,9 @@ function Shell() {
     }
   };
 
-  const onUnlock = () => {
+  const onUnlock = (token: string) => {
     setAdminSession();
+    try { sessionStorage.setItem("pds-admin-token", token); } catch {}
     setAdminActive(true);
     setShowSentry(false);
     navigate("/admin");
@@ -189,6 +190,7 @@ function Shell() {
 
   const onExitAdmin = () => {
     clearAdminSession();
+    try { sessionStorage.removeItem("pds-admin-token"); } catch {}
     setAdminActive(false);
     navigate("/");
   };

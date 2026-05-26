@@ -69,13 +69,14 @@ export const barsRouter = router({
       previousPrice: z.number().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      // Anti-spam: 5 submissions per IP per hour
-      const limit = rateLimit(`submit:${ctx.ip}`, { windowMs: 60 * 60 * 1000, max: 5 });
-      if (!limit.allowed) {
-        throw new TRPCError({
-          code: "TOO_MANY_REQUESTS",
-          message: `You've submitted a lot lately. Try again in ${Math.ceil(limit.retryAfterMs / 60000)} minutes.`,
-        });
+      if (!ctx.isAdmin) {
+        const limit = rateLimit(`submit:${ctx.ip}`, { windowMs: 60 * 60 * 1000, max: 5 });
+        if (!limit.allowed) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: `You've submitted a lot lately. Try again in ${Math.ceil(limit.retryAfterMs / 60000)} minutes.`,
+          });
+        }
       }
       return db.insert(submissions).values({
         barId: input.barId,
@@ -99,13 +100,14 @@ export const barsRouter = router({
       reporterName: z.string().max(32).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      // Anti-spam: 10 reports per IP per hour
-      const limit = rateLimit(`report:${ctx.ip}`, { windowMs: 60 * 60 * 1000, max: 10 });
-      if (!limit.allowed) {
-        throw new TRPCError({
-          code: "TOO_MANY_REQUESTS",
-          message: `Too many reports. Try again in ${Math.ceil(limit.retryAfterMs / 60000)} minutes.`,
-        });
+      if (!ctx.isAdmin) {
+        const limit = rateLimit(`report:${ctx.ip}`, { windowMs: 60 * 60 * 1000, max: 10 });
+        if (!limit.allowed) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: `Too many reports. Try again in ${Math.ceil(limit.retryAfterMs / 60000)} minutes.`,
+          });
+        }
       }
       return db.insert(barReports).values({
         barId: input.barId,

@@ -3,7 +3,7 @@ import { Delete, X } from "lucide-react";
 import { trpc } from "../lib/trpc";
 
 interface Props {
-  onUnlock: () => void;
+  onUnlock: (token: string) => void;
   onCancel: () => void;
 }
 
@@ -35,7 +35,7 @@ export function PinSentry({ onUnlock, onCancel }: Props) {
     checkPin.mutateAsync({ pin })
       .then(result => {
         if (result.ok) {
-          onUnlock();
+          onUnlock(result.token);
         } else {
           setShake(true);
           if (result.locked) {

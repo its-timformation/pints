@@ -34,6 +34,11 @@ export function rateLimit(key: string, opts: RateLimitOptions) {
   return { allowed: true as const, retryAfterMs: 0 };
 }
 
+export function rateLimitOrSkip(key: string, opts: RateLimitOptions, skip: boolean) {
+  if (skip) return { allowed: true as const, retryAfterMs: 0 };
+  return rateLimit(key, opts);
+}
+
 // Garbage-collect old buckets every minute to stop the map growing forever
 setInterval(() => {
   const now = Date.now();

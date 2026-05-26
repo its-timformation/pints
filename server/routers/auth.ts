@@ -1,5 +1,6 @@
 import { router, publicProcedure } from "../trpc";
 import { z } from "zod";
+import crypto from "node:crypto";
 
 /**
  * Server-side PIN gate. The PIN never reaches the client bundle — the client
@@ -21,6 +22,12 @@ const attempts = new Map<string, Attempts>();
 const LOCKOUT_MS = 30_000;
 const MAX_ATTEMPTS = 3;
 
+const activeSessions = new Set<string>();
+
+export function isAdminToken(token: string): boolean {
+  return activeSessions.has(token);
+}
+
 export const authRouter = router({
   checkPin: publicProcedure
     .input(z.object({ pin: z.string().length(6) }))
@@ -41,7 +48,10 @@ export const authRouter = router({
 
       if (match) {
         attempts.delete(ip);
-        return { ok: true as const };
+        const token = crypto.randomBytes(32).toString("hex");
+        activeSessions.add(token);
+        setTimeout(() => activeSessions.delete(token), 30 * 60 * 1000);
+        return { ok: true as const, token };
       }
 
       const next: Attempts = {
