@@ -158,7 +158,7 @@ function Shell() {
     const next = tapCount + 1;
     setTapCount(next);
     if (next >= 7) {
-      enterStoutsMode();
+      if (stoutsMode) exitStoutsMode(); else enterStoutsMode();
       setTapCount(0);
     }
   };

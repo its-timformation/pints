@@ -12,6 +12,8 @@ export const bars = sqliteTable("bars", {
   imageUrl: text("image_url"),
   openingHours: text("opening_hours"), // simple string "HH:MM-HH:MM" or JSON
   servesGuinness: integer("serves_guinness", { mode: "boolean" }).default(false).notNull(),
+  googleMapsUrl: text("google_maps_url"),
+  websiteUrl: text("website_url"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
@@ -65,6 +67,16 @@ export const barReports = sqliteTable("bar_reports", {
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
+// Admin-configurable editor's pick — single-row config
+export const editorsPick = sqliteTable("editors_pick", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  mode: text("mode").default("cheapest").notNull(), // cheapest | manual | daily_random | weekly_random
+  barId: integer("bar_id").references(() => bars.id),
+  lastRandomBarId: integer("last_random_bar_id"),
+  lastRandomDate: text("last_random_date"),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
 // Anonymous PWA push subscriptions — no auth required
 export const pushSubscriptions = sqliteTable("push_subscriptions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -94,3 +106,6 @@ export type InsertBarReport = typeof barReports.$inferInsert;
 
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
+
+export type EditorsPick = typeof editorsPick.$inferSelect;
+export type InsertEditorsPick = typeof editorsPick.$inferInsert;

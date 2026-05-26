@@ -7,8 +7,9 @@ import BarsManager from "../components/BarsManager";
 import DrinksCatalogue from "../admin/DrinksCatalogue";
 import DealsManager from "../admin/DealsManager";
 import ReportsManager from "../admin/ReportsManager";
+import EditorsPickAdmin from "../admin/EditorsPick";
 
-type Section = "home" | "queue" | "bars" | "drinks" | "deals" | "reports";
+type Section = "home" | "queue" | "bars" | "drinks" | "deals" | "reports" | "pick";
 
 interface Props { onExit: () => void; }
 
@@ -28,6 +29,7 @@ export default function Admin({ onExit }: Props) {
   if (section === "drinks") return <DrinksCatalogue onBack={() => setSection("home")} />;
   if (section === "deals") return <DealsManager onBack={() => setSection("home")} />;
   if (section === "reports") return <ReportsManager onBack={() => setSection("home")} />;
+  if (section === "pick") return <EditorsPickAdmin onBack={() => setSection("home")} />;
 
   if (isLoading) return <LoadingMessage surface="admin" />;
 
@@ -37,6 +39,7 @@ export default function Admin({ onExit }: Props) {
     ["drinks", "DRINKS CATALOGUE", "VERIFY & MANAGE", null, ""],
     ["deals", "DEALS & EVENTS", `${activeDeals} ACTIVE · HAPPY HOURS`, null, ""],
     ["reports", "USER REPORTS", "FLAGGED ISSUES & FEEDBACK", openReports, "sun"],
+    ["pick", "EDITOR'S PICK", "CONFIGURE FEATURED BAR", null, ""],
   ];
 
   return (
@@ -65,7 +68,7 @@ export default function Admin({ onExit }: Props) {
       <section className="px-4">
         <div className="hairline-b flex items-baseline justify-between pb-1.5 mb-1">
           <div className="font-display text-lg uppercase">SECTIONS</div>
-          <div className="text-meta opacity-55">05 AREAS</div>
+          <div className="text-meta opacity-55">06 AREAS</div>
         </div>
         <ul>
           {sections.map(([key, label, sub, badge, badgeColor], i) => (

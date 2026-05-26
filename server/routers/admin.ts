@@ -1,6 +1,6 @@
 import { router, publicProcedure } from "../trpc";
 import { db } from "../db";
-import { bars, drinks, deals, submissions, barReports } from "../../shared/schema";
+import { bars, drinks, deals, submissions, barReports, editorsPick } from "../../shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -166,6 +166,8 @@ export const adminRouter = router({
       openingHours: z.string().optional().nullable(),
       imageUrl: z.string().optional().nullable(),
       servesGuinness: z.boolean().optional(),
+      googleMapsUrl: z.string().optional().nullable(),
+      websiteUrl: z.string().optional().nullable(),
     }))
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
@@ -230,6 +232,28 @@ export const adminRouter = router({
     .input(z.object({ id: z.number(), isActive: z.boolean() }))
     .mutation(async ({ input }) => {
       return db.update(deals).set({ isActive: input.isActive }).where(eq(deals.id, input.id)).returning();
+    }),
+
+  // Editor's Pick config
+  getEditorsPick: publicProcedure.query(async () => {
+    const [row] = await db.select().from(editorsPick).limit(1);
+    return row ?? { id: null, mode: "cheapest", barId: null, lastRandomBarId: null, lastRandomDate: null };
+  }),
+
+  setEditorsPick: publicProcedure
+    .input(z.object({
+      mode: z.enum(["cheapest", "manual", "daily_random", "weekly_random"]),
+      barId: z.number().optional().nullable(),
+    }))
+    .mutation(async ({ input }) => {
+      const [existing] = await db.select().from(editorsPick).limit(1);
+      if (existing) {
+        return db.update(editorsPick)
+          .set({ mode: input.mode, barId: input.barId ?? null, updatedAt: new Date().toISOString() })
+          .where(eq(editorsPick.id, existing.id))
+          .returning();
+      }
+      return db.insert(editorsPick).values({ mode: input.mode, barId: input.barId ?? null }).returning();
     }),
 
   // Reports

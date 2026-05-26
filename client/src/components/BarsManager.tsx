@@ -136,7 +136,7 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
     setMapLinkStatus('loading');
     try {
       const result = await resolveMapLink.mutateAsync({ url: text });
-      setBarForm({ ...barForm, lat: result.lat, lng: result.lng });
+      setBarForm((prev: any) => ({ ...prev, lat: result.lat, lng: result.lng, googleMapsUrl: text }));
       setMapLinkInput('');
       setMapLinkStatus('success');
       setTimeout(() => setMapLinkStatus('idle'), 2500);
@@ -259,6 +259,15 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
               </div>
             </div>
 
+            {/* Website URL */}
+            <input
+              type="text"
+              value={barForm.websiteUrl || ''}
+              onChange={e => setBarForm({ ...barForm, websiteUrl: e.target.value || null })}
+              placeholder="Website URL (https://…)"
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm"
+            />
+
             <label className="flex items-center justify-center gap-2 bg-[var(--color-ink-card)] border border-[var(--color-rule)] cursor-pointer p-2 relative overflow-hidden">
               {uploading ? <span className="animate-pulse text-meta">UPLOADING…</span> : (
                 <>
@@ -276,6 +285,8 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
                   id: barId, name: barForm.name, area: barForm.area, openingHours: barForm.openingHours,
                   type: barForm.type, lat: barForm.lat, lng: barForm.lng, imageUrl: barForm.imageUrl,
                   servesGuinness: !!barForm.servesGuinness,
+                  googleMapsUrl: barForm.googleMapsUrl ?? null,
+                  websiteUrl: barForm.websiteUrl ?? null,
                 });
                 setEditingBar(false);
               }}
@@ -329,7 +340,15 @@ function DrinkRow({ drink, onDelete, onUpdate }: any) {
         <div className="flex gap-2">
           <input type="number" step="0.01" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })}
             className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm" placeholder="Price" />
-          <span className="text-meta opacity-60 self-center px-2">{form.currency}</span>
+          <select
+            value={form.currency}
+            onChange={e => setForm({ ...form, currency: e.target.value })}
+            className="bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-2 min-h-[44px] text-sm text-[var(--color-paper)]"
+          >
+            <option value="EUR" className="bg-[var(--color-ink)]">EUR</option>
+            <option value="GBP" className="bg-[var(--color-ink)]">GBP</option>
+            <option value="CHF" className="bg-[var(--color-ink)]">CHF</option>
+          </select>
         </div>
         <label className="flex items-center gap-2 min-h-[44px] cursor-pointer">
           <input type="checkbox" checked={form.isVerified} onChange={e => setForm({ ...form, isVerified: e.target.checked })} className="w-5 h-5" />

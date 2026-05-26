@@ -1,6 +1,6 @@
 import { router, publicProcedure } from "../trpc";
 import { db } from "../db";
-import { bars, drinks, deals, submissions, barReports } from "../../shared/schema";
+import { bars, drinks, deals, submissions, barReports, editorsPick } from "../../shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -118,5 +118,58 @@ export const barsRouter = router({
 
   getReports: publicProcedure.query(async () => {
     return db.select().from(barReports).orderBy(desc(barReports.createdAt));
+  }),
+
+  getEditorsPick: publicProcedure.query(async () => {
+    const [cfg] = await db.select().from(editorsPick).limit(1);
+    const mode = cfg?.mode ?? "cheapest";
+
+    const [allBars, allDrinks] = await Promise.all([
+      db.select().from(bars),
+      db.select().from(drinks),
+    ]);
+
+    const beerRe = /lager|beer|pint|kronen|stella|heineken|guinness|ipa|carlsberg|1664|mutzig/i;
+
+    const getCheapestBeer = (barId: number) => {
+      const beers = allDrinks.filter(d => d.barId === barId && beerRe.test(d.name));
+      if (!beers.length) return null;
+      return beers.reduce((min, d) => d.price < min.price ? d : min, beers[0]);
+    };
+
+    let selectedBar: typeof allBars[0] | undefined;
+
+    if (mode === "cheapest") {
+      selectedBar = allBars
+        .filter(b => getCheapestBeer(b.id) !== null)
+        .sort((a, b) => (getCheapestBeer(a.id)?.price ?? Infinity) - (getCheapestBeer(b.id)?.price ?? Infinity))[0];
+    } else if (mode === "manual" && cfg?.barId) {
+      selectedBar = allBars.find(b => b.id === cfg.barId);
+    } else if (mode === "daily_random" || mode === "weekly_random") {
+      const key = mode === "daily_random"
+        ? new Date().toISOString().slice(0, 10)
+        : (() => {
+            const d = new Date();
+            d.setDate(d.getDate() - d.getDay());
+            return d.toISOString().slice(0, 10);
+          })();
+
+      if (cfg?.lastRandomDate === key && cfg?.lastRandomBarId) {
+        selectedBar = allBars.find(b => b.id === cfg.lastRandomBarId);
+      } else {
+        const eligible = allBars.filter(b => getCheapestBeer(b.id) !== null);
+        if (eligible.length) {
+          selectedBar = eligible[Math.floor(Math.random() * eligible.length)];
+          if (cfg) {
+            await db.update(editorsPick)
+              .set({ lastRandomBarId: selectedBar.id, lastRandomDate: key })
+              .where(eq(editorsPick.id, cfg.id));
+          }
+        }
+      }
+    }
+
+    if (!selectedBar) return null;
+    return { bar: selectedBar, cheapestBeer: getCheapestBeer(selectedBar.id), mode };
   }),
 });

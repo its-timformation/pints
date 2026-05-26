@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, MapPin, Share2, Flag, ChevronRight } from "lucide-react";
+import { ChevronLeft, MapPin, Share2, Flag, ChevronRight, Globe } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { useAppStore, convertPrice, formatPrice, isOpenNow, isVerifiedStale } from "../lib/store";
 import { LoadingMessage } from "../components/LoadingMessage";
@@ -95,6 +95,24 @@ export default function BarDetail() {
         </div>
         <ChevronRight size={14} strokeWidth={1.4} className="opacity-50" />
       </Link>
+      {bar.googleMapsUrl && (
+        <a href={bar.googleMapsUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between px-5 py-3 hairline-b">
+          <div className="flex items-center gap-2">
+            <MapPin size={16} strokeWidth={1.6} className="text-[var(--color-blaze)]" />
+            <span className="text-meta">VIEW ON GOOGLE MAPS</span>
+          </div>
+          <ChevronRight size={14} strokeWidth={1.4} className="opacity-50" />
+        </a>
+      )}
+      {bar.websiteUrl && (
+        <a href={bar.websiteUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between px-5 py-3 hairline-b">
+          <div className="flex items-center gap-2">
+            <Globe size={16} strokeWidth={1.6} className="text-[var(--color-blaze)]" />
+            <span className="text-meta">VISIT WEBSITE</span>
+          </div>
+          <ChevronRight size={14} strokeWidth={1.4} className="opacity-50" />
+        </a>
+      )}
 
       {/* Drinks list */}
       <section className="px-5 pt-4 pb-3">

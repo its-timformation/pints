@@ -47,12 +47,13 @@ export default function Dashboard() {
     });
   }, [barsWithDetails, currency, center.lat, center.lng]);
 
-  // Editor's pick = cheapest pint in the network
+  const { data: pickData } = trpc.bars.getEditorsPick.useQuery();
+
+  // Editor's pick from server, enriched client-side for distance + price
   const editorsPick = useMemo(() => {
-    return enriched
-      .filter(b => b.cheapest)
-      .sort((a, b) => (a.cheapest!.price - b.cheapest!.price))[0];
-  }, [enriched]);
+    if (!pickData?.bar) return null;
+    return enriched.find(b => b.id === pickData.bar.id) ?? null;
+  }, [pickData, enriched]);
 
   // Nearest = open bars sorted by distance
   const nearest = useMemo(() => {
@@ -130,7 +131,9 @@ export default function Dashboard() {
         <Link to={`/bar/${editorsPick.id}`} className="block mx-4 mb-3 grain-blaze text-[var(--color-paper)] !min-h-0">
           <div className="px-4 py-4 flex items-center gap-3">
             <div className="flex-1 min-w-0">
-              <div className="text-eyebrow opacity-90">EDITOR'S PICK · CHEAPEST PINT</div>
+              <div className="text-eyebrow opacity-90">
+                EDITOR'S PICK · {pickData?.mode === "cheapest" ? "CHEAPEST PINT" : pickData?.mode === "manual" ? "EDITOR'S CHOICE" : pickData?.mode === "daily_random" ? "TODAY'S PICK" : "WEEKLY PICK"}
+              </div>
               <div className="font-display text-2xl uppercase leading-none mt-1.5">{editorsPick.name}</div>
               <div className="flex items-end justify-between mt-2">
                 <div className="text-meta opacity-90">

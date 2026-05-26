@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronRight, Search } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { useAppStore, convertPrice, formatPrice, isOpenNow } from "../lib/store";
 import { LoadingMessage } from "../components/LoadingMessage";
+import { SearchTypeahead, FilterState } from "../components/SearchTypeahead";
 
 type SortMode = "name" | "price" | "area";
 
@@ -12,26 +13,29 @@ export default function ListPage() {
   const { data: barsWithDetails, isLoading } = trpc.bars.getAllWithDetails.useQuery();
   const location = useLocation();
 
-  const [query, setQuery] = useState("");
   const [openOnly, setOpenOnly] = useState(false);
   const [happyOnly, setHappyOnly] = useState(false);
   const [guinnessOnly, setGuinnessOnly] = useState(false);
   const [areaFilter, setAreaFilter] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortMode>("name");
+  const [initialGuinness, setInitialGuinness] = useState(false);
 
   useEffect(() => {
     if ((location.state as any)?.guinnessFilter) {
-      setGuinnessOnly(true);
+      setInitialGuinness(true);
       window.history.replaceState({}, "", location.pathname);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const areas = useMemo(() => {
-    const set = new Set<string>();
-    (barsWithDetails ?? []).forEach(b => b.area && set.add(b.area));
-    return Array.from(set).sort();
-  }, [barsWithDetails]);
+  const handleFilterChange = useCallback((state: FilterState) => {
+    setOpenOnly(state.openOnly);
+    setHappyOnly(state.happyOnly);
+    setGuinnessOnly(state.guinnessOnly);
+    setAreaFilter(state.areaFilter);
+    setQuery(state.query);
+  }, []);
 
   const enriched = useMemo(() => {
     if (!barsWithDetails) return [];
@@ -103,34 +107,13 @@ export default function ListPage() {
         <h1 className="text-headline">EVERY BAR<br/>ON THE<br/>MOUNTAIN</h1>
       </section>
 
-      {/* Search */}
+      {/* Typeahead search with filter chips */}
       <div className="px-4 mb-3">
-        <div className="flex items-center gap-2 border border-[var(--color-rule)] px-3 min-h-[44px]">
-          <Search size={16} strokeWidth={1.6} className="opacity-50 shrink-0" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search bars, areas or drinks"
-            className="w-full bg-transparent py-2.5 focus:outline-none placeholder:text-[var(--color-paper)] placeholder:opacity-40"
-          />
-        </div>
-      </div>
-
-      {/* Filter pills — horizontally scrollable with fade-right hint */}
-      <div className="relative mb-1">
-        <div className="px-4 flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-          <Pill active={openOnly} onClick={() => setOpenOnly(!openOnly)}>OPEN NOW</Pill>
-          <Pill active={happyOnly} onClick={() => setHappyOnly(!happyOnly)}>HAPPY HOUR</Pill>
-          <Pill active={guinnessOnly} onClick={() => setGuinnessOnly(!guinnessOnly)}>POURS GUINNESS</Pill>
-          {areas.map(a => (
-            <Pill key={a} active={areaFilter === a} onClick={() => setAreaFilter(areaFilter === a ? null : a)}>
-              {a.toUpperCase()}
-            </Pill>
-          ))}
-        </div>
-        {/* Right-edge fade to hint scrollability */}
-        <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-[var(--color-ink)] to-transparent" />
+        <SearchTypeahead
+          bars={(barsWithDetails ?? []).map(b => ({ id: b.id, name: b.name, area: b.area, drinks: b.drinks ?? [] }))}
+          initialGuinness={initialGuinness}
+          onChange={handleFilterChange}
+        />
       </div>
 
       {/* Sort pills */}
@@ -172,14 +155,5 @@ export default function ListPage() {
         ))}
       </ul>
     </div>
-  );
-}
-
-function Pill({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
-  return (
-    <button onClick={onClick}
-      className={`shrink-0 px-4 py-2.5 min-h-[44px] text-meta uppercase whitespace-nowrap ${active ? "bg-[var(--color-blaze)] text-[var(--color-paper)]" : "border border-[var(--color-rule)] opacity-70"}`}>
-      {children}
-    </button>
   );
 }
