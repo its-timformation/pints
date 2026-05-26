@@ -13,7 +13,7 @@ interface Props {
 export function LoadingMessage({ surface, className = "" }: Props) {
   const [seed, setSeed] = useState(() => Date.now());
   useEffect(() => {
-    const id = setInterval(() => setSeed(Date.now()), 3000);
+    const id = setInterval(() => setSeed(Date.now()), 5000);
     return () => clearInterval(id);
   }, []);
   const msg = loadingMessage(surface, seed);
