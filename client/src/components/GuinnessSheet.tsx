@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight, X } from "lucide-react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
@@ -18,6 +18,7 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
   const { data: allBars, isLoading } = trpc.bars.getAllWithDetails.useQuery(undefined, { enabled: open });
 
   const y = useMotionValue(0);
+  const listRef = useRef<HTMLDivElement>(null);
   const SNAP_POINTS = [0, window.innerHeight * 0.35, window.innerHeight * 0.65];
   const DEFAULT_SNAP = window.innerHeight * 0.35;
 
@@ -107,15 +108,16 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
       {/* Sheet */}
       <motion.div
         className="absolute bottom-0 left-0 right-0 bg-[var(--color-paper)] text-[var(--color-ink)] rounded-t-2xl flex flex-col overflow-hidden"
-        style={{ y, height: "100vh" }}
+        style={{ y, height: "100vh", touchAction: "none" }}
         drag="y"
         dragConstraints={{ top: 0, bottom: window.innerHeight }}
         dragElastic={0.1}
+        dragDirectionLock={true}
         onDragEnd={onDragEnd}
       >
         {/* Drag handle */}
         <div
-          className="shrink-0 flex flex-col items-center justify-center cursor-grab touch-none select-none"
+          className="shrink-0 flex flex-col items-center justify-center cursor-grab select-none"
           style={{ height: 44 }}
           aria-label="Drag to resize or dismiss"
         >
@@ -134,7 +136,21 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
         </div>
 
         {/* Bar list */}
-        <div className="flex-1 overflow-y-auto">
+        <div
+          ref={listRef}
+          className="flex-1 overflow-y-auto pb-safe"
+          onPointerDown={(e) => {
+            if (listRef.current && listRef.current.scrollTop <= 0) {
+              e.currentTarget.style.overflowY = 'hidden';
+            }
+          }}
+          onPointerUp={() => {
+            if (listRef.current) listRef.current.style.overflowY = 'auto';
+          }}
+          onPointerCancel={() => {
+            if (listRef.current) listRef.current.style.overflowY = 'auto';
+          }}
+        >
           {isLoading ? (
             <LoadingMessage surface="guinness" className="!text-[var(--color-ink)]" />
           ) : nearbyGuinnessBars.length === 0 ? (
