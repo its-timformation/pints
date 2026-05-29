@@ -1,5 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <path d="M8 4 L10 28 L22 28 L24 4 Z" fill="none" stroke="#E63E0B" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M9.5 10 L22.5 10" stroke="#E63E0B" stroke-width="1.5"/>
-  <path d="M24 6 Q29 6 29 11 Q29 16 24 15" fill="none" stroke="#E63E0B" stroke-width="2"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" rx="24" fill="#E63E0B"/>
+  <path d="M28,21 L92,21 L84,99 Q84,105 78,105 L42,105 Q36,105 36,99 Z" fill="#0A0908"/>
+  <ellipse cx="60" cy="21" rx="32" ry="10" fill="#FBF5E0"/>
+  <text x="60" y="79" font-family="Anton, Impact, Arial Narrow, sans-serif" font-size="38" font-weight="400" fill="#FBF5E0" text-anchor="middle">P</text>
 </svg>
