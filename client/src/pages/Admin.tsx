@@ -44,7 +44,7 @@ export default function Admin({ onExit }: Props) {
   ];
 
   return (
-    <div className="grain-ink pb-6">
+    <div className="grain-ink min-h-full pb-6 max-w-md mx-auto">
       <section className="px-4 pt-5 pb-4">
         <div className="text-eyebrow text-[var(--color-blaze)] mb-3">CONTROL ROOM · ADMIN</div>
         <h1 className="text-headline">WELCOME<br/>BACK</h1>

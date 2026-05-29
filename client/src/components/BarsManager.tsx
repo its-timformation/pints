@@ -297,7 +297,7 @@ export default function BarsManager({ onBack }: Props) {
   ];
 
   return (
-    <div className="grain-ink pb-8">
+    <div className="grain-ink pb-8 max-w-md mx-auto">
       <div className="px-4 py-3 flex items-center justify-between hairline-b">
         <button onClick={onBack} className="flex items-center gap-1.5 text-meta opacity-70">
           <ChevronLeft size={16} strokeWidth={1.6} />
