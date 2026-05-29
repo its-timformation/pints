@@ -154,7 +154,9 @@ export default function Dashboard() {
         <section className="px-4 pb-3">
           <div className="hairline-b flex items-baseline justify-between pb-1.5 mb-1">
             <div className="font-display text-lg uppercase">LIVE NOW</div>
-            <div className="text-meta opacity-55">{activeDeals.length.toString().padStart(2,"0")} ACTIVE</div>
+            <Link to="/live" className="text-meta text-[var(--color-blaze)] flex items-center gap-1">
+              SEE ALL {activeDeals.length.toString().padStart(2,"0")} →
+            </Link>
           </div>
           <ul>
             {activeDeals.slice(0, 3).map((deal, i) => {

@@ -10,6 +10,7 @@ import ListPage from "./pages/ListPage";
 import BarDetail from "./pages/BarDetail";
 import SubmitPrice from "./pages/SubmitPrice";
 import Admin from "./pages/Admin";
+import LiveNow from "./pages/LiveNow";
 
 const ADMIN_SESSION_KEY = "pds-admin-session";
 const SESSION_TTL_MS = 30 * 60 * 1000; // 30 min admin session
@@ -208,6 +209,7 @@ function Shell() {
           <Route path="/bar/:id" element={<BarDetail />} />
           <Route path="/submit/:id" element={<SubmitPrice />} />
           <Route path="/admin" element={<Admin onExit={onExitAdmin} />} />
+          <Route path="/live" element={<LiveNow />} />
         </Routes>
       </main>
       <BottomNav />
