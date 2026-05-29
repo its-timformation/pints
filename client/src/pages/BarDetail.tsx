@@ -46,7 +46,7 @@ export default function BarDetail() {
   };
 
   return (
-    <div className="grain-ink min-h-full max-w-md mx-auto">
+    <div className="grain-ink max-w-md mx-auto">
       {/* Back row */}
       <div className="px-4 py-3 flex items-center justify-between">
         <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-meta opacity-70" aria-label="Go back">

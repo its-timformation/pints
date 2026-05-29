@@ -75,7 +75,7 @@ export default function LiveNow() {
   if (isLoading) return <LoadingMessage surface="dashboard" />;
 
   return (
-    <div className="grain-ink min-h-full max-w-md mx-auto pb-6">
+    <div className="grain-ink max-w-md mx-auto pb-6">
       <div className="px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}

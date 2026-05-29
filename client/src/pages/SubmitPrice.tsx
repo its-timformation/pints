@@ -92,7 +92,7 @@ export default function SubmitPrice() {
   }
 
   return (
-    <div className="grain-ink min-h-full pb-10 max-w-md mx-auto">
+    <div className="grain-ink pb-10 max-w-md mx-auto">
       <div className="px-4 py-3">
         <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-meta opacity-70 !min-h-0" aria-label="Go back">
           <ChevronLeft size={16} strokeWidth={1.6} />

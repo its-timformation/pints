@@ -101,7 +101,7 @@ export default function ListPage() {
   if (isLoading) return <LoadingMessage surface="list" />;
 
   return (
-    <div className="grain-ink min-h-full max-w-md mx-auto">
+    <div className="grain-ink max-w-md mx-auto">
       <section className="px-4 pt-5 pb-3">
         <div className="text-eyebrow text-[var(--color-blaze)] mb-3">DIRECTORY · {(barsWithDetails?.length ?? 0).toString().padStart(2,"0")} BARS</div>
         <h1 className="text-headline">EVERY BAR<br/>ON THE<br/>MOUNTAIN</h1>
