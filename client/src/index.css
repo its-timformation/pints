@@ -38,6 +38,7 @@
     font-family: var(--font-sans);
     font-size: 16px; /* prevents iOS zoom on inputs */
   }
+  main { -webkit-overflow-scrolling: touch; }
   input, select, textarea, button { font: inherit; }
   /* Keep all interactive controls at min 44px tap target */
   button, a, [role="button"] { min-height: 44px; }
