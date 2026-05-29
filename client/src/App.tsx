@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAppStore } from "./lib/store";
+import { APP_VERSION } from './lib/version';
 import { PinSentry } from "./components/PinSentry";
 import { BuildNotification } from "./components/BuildNotification";
 
@@ -56,7 +57,9 @@ function TickerBand({ adminActive, onAdminTap }: { adminActive: boolean; onAdmin
           className="!min-h-0 px-1 -mx-1 hover:opacity-100 transition-opacity"
           aria-label="Editorial volume marker"
         >
-          <span className={adminActive ? "text-[var(--color-blaze)] opacity-100" : ""}>{pageLabel || `VOL.01`}</span>
+          <span className={adminActive ? "text-[var(--color-blaze)] opacity-100" : ""}>
+            {adminActive ? `v${APP_VERSION}` : (pageLabel || 'VOL.01')}
+          </span>
         </button>
       </div>
     </div>
@@ -199,7 +202,7 @@ function Shell() {
 
   return (
     <div className="flex flex-col h-screen">
-      <TickerBand adminActive={adminActive && location.pathname.startsWith("/admin")} onAdminTap={onAdminTap} />
+      <TickerBand adminActive={adminActive} onAdminTap={onAdminTap} />
       <Header onWordmarkTap={onWordmarkTap} />
       <main className="flex-1 min-h-0 overflow-y-auto">
         <Routes>
