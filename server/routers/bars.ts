@@ -5,6 +5,7 @@ import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { rateLimit } from "../rateLimit";
+import { verifySubmissionImage } from "../services/imageVerifier";
 
 export const barsRouter = router({
   getAll: publicProcedure.query(async () => {
@@ -78,7 +79,7 @@ export const barsRouter = router({
           });
         }
       }
-      return db.insert(submissions).values({
+      const inserted = await db.insert(submissions).values({
         barId: input.barId,
         drinkName: input.drinkName,
         drinkSize: input.drinkSize,
@@ -90,6 +91,33 @@ export const barsRouter = router({
         previousPrice: input.previousPrice,
         status: "pending",
       }).returning();
+
+      if (input.imageUrl) {
+        verifySubmissionImage(input.imageUrl, input.drinkName, input.price, input.currency)
+          .then(async (result) => {
+            await db.update(submissions)
+              .set({ aiVerification: JSON.stringify(result) })
+              .where(eq(submissions.id, inserted[0].id));
+
+            if (result.autoApprove) {
+              await db.insert(drinks).values({
+                barId: input.barId,
+                name: input.drinkName,
+                size: input.drinkSize,
+                price: input.price,
+                currency: input.currency,
+                isVerified: true,
+                verifiedAt: new Date().toISOString(),
+              });
+              await db.update(submissions)
+                .set({ status: 'approved' })
+                .where(eq(submissions.id, inserted[0].id));
+            }
+          })
+          .catch(e => console.error('AI verification failed:', e));
+      }
+
+      return inserted;
     }),
 
   report: publicProcedure

@@ -93,7 +93,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="grain-ink min-h-full">
+    <div className="grain-ink">
       {/* Hero */}
       <section className="px-4 pt-6 pb-5">
         <div className="text-eyebrow text-[var(--color-blaze)] mb-3">DISPATCH 01 · {localArea.toUpperCase()}</div>

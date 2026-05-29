@@ -28,7 +28,7 @@ export default function SubmissionsQueue({ onBack }: Props) {
   };
 
   return (
-    <div className="grain-ink min-h-full pb-6">
+    <div className="grain-ink pb-6">
       <div className="px-4 py-3 flex items-center justify-between hairline-b">
         <button onClick={onBack} className="flex items-center gap-1.5 text-meta opacity-70">
           <ChevronLeft size={16} strokeWidth={1.6} />
@@ -48,6 +48,23 @@ export default function SubmissionsQueue({ onBack }: Props) {
         <FilterPill active={filter === "new"} onClick={() => setFilter("new")}>NEW · {newCount}</FilterPill>
         <FilterPill active={filter === "update"} onClick={() => setFilter("update")}>UPDATE · {updateCount}</FilterPill>
       </div>
+
+      {filtered.length > 1 && (
+        <div className="px-3 pt-3">
+          <button
+            onClick={async () => {
+              if (!confirm(`Approve all ${filtered.length} pending submissions?`)) return;
+              for (const sub of filtered) {
+                await resolveMutation.mutateAsync({ id: sub.id, action: 'approve' });
+              }
+              refetch();
+            }}
+            className="w-full border border-[var(--color-paper)] py-2.5 text-meta mb-3"
+          >
+            APPROVE ALL {filtered.length} →
+          </button>
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <div className="px-4 py-16 text-center">
@@ -100,6 +117,18 @@ export default function SubmissionsQueue({ onBack }: Props) {
                     <div className="text-meta opacity-50 mt-0.5">{sub.currency}</div>
                   </div>
                 </div>
+
+                {(() => {
+                  if (!sub.aiVerification) return null;
+                  try {
+                    const ai = JSON.parse(sub.aiVerification);
+                    return (
+                      <div className={`mt-2 px-2 py-1.5 text-meta ${ai.autoApprove ? 'bg-[var(--color-verified)] bg-opacity-20 text-[var(--color-verified)]' : 'border border-[var(--color-rule)] opacity-70'}`}>
+                        {ai.autoApprove ? '✓ AI VERIFIED · AUTO-APPROVED' : `AI: ${ai.reasoning}`}
+                      </div>
+                    );
+                  } catch { return null; }
+                })()}
 
                 <div className="flex gap-1.5 mt-3">
                   <button onClick={() => resolve(sub.id, "reject")} className="flex-1 border border-[var(--color-rule)] min-h-[44px]">

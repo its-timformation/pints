@@ -101,7 +101,7 @@ export default function ListPage() {
   if (isLoading) return <LoadingMessage surface="list" />;
 
   return (
-    <div className="grain-ink min-h-full">
+    <div className="grain-ink">
       <section className="px-4 pt-5 pb-3">
         <div className="text-eyebrow text-[var(--color-blaze)] mb-3">DIRECTORY · {(barsWithDetails?.length ?? 0).toString().padStart(2,"0")} BARS</div>
         <h1 className="text-headline">EVERY BAR<br/>ON THE<br/>MOUNTAIN</h1>
@@ -128,32 +128,77 @@ export default function ListPage() {
       </div>
 
       {/* List */}
-      <ul className="px-4 pb-6">
-        {filtered.length === 0 && (
-          <li className="py-12 text-center text-meta opacity-55">No bars match your filters.</li>
-        )}
-        {filtered.map((bar, i) => (
-          <li key={bar.id}>
-            <Link to={`/bar/${bar.id}`} className="hairline-b-soft last:border-b-0 flex items-center gap-3 py-3">
-              <span className="num-rail text-[var(--color-blaze)] w-7 shrink-0">{String(i+1).padStart(2,"0")}</span>
-              <div className="flex-1 min-w-0">
-                <div className="font-display text-base uppercase truncate text-[var(--color-paper)]">{bar.name}</div>
-                <div className="text-meta opacity-60 mt-0.5 flex items-center gap-1.5 flex-wrap">
-                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${bar.openState.open ? "bg-[var(--color-verified)]" : "bg-[var(--color-paper)] opacity-35"}`} />
-                  {bar.area?.toUpperCase()}
-                  {bar.hasActiveHappy && <span className="text-[var(--color-sun)]">· HAPPY NOW</span>}
+      {filtered.length === 0 && (
+        <div className="py-12 text-center text-meta opacity-55 px-4">No bars match your filters.</div>
+      )}
+      {sort === 'area' ? (
+        (() => {
+          const grouped = filtered.reduce((acc, bar) => {
+            const area = bar.area || 'Other';
+            if (!acc[area]) acc[area] = [];
+            acc[area].push(bar);
+            return acc;
+          }, {} as Record<string, typeof filtered>);
+
+          return Object.entries(grouped)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([area, bars]) => (
+              <div key={area}>
+                <div className="sticky top-0 z-10 bg-[var(--color-ink)] border-l-2 border-[var(--color-blaze)] px-4 py-2 flex items-center justify-between">
+                  <span className="font-display text-sm uppercase text-[var(--color-blaze)]">{area}</span>
+                  <span className="text-meta opacity-50">{bars.length.toString().padStart(2,'0')}</span>
                 </div>
+                <ul>
+                  {bars.map((bar, i) => (
+                    <li key={bar.id}>
+                      <Link to={`/bar/${bar.id}`} className="hairline-b-soft last:border-b-0 flex items-center gap-3 py-3 px-4">
+                        <span className="num-rail text-[var(--color-blaze)] w-7 shrink-0">{String(i+1).padStart(2,'0')}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-display text-base uppercase truncate text-[var(--color-paper)]">{bar.name}</div>
+                          <div className="text-meta opacity-60 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                            <span className={`inline-block w-1.5 h-1.5 rounded-full ${bar.openState.open ? 'bg-[var(--color-verified)]' : 'bg-[var(--color-paper)] opacity-35'}`} />
+                            {bar.openState.open ? `OPEN UNTIL ${bar.openState.closesAt}` : `CLOSED`}
+                            {bar.hasActiveHappy && <span className="text-[var(--color-sun)]">· HAPPY NOW</span>}
+                          </div>
+                        </div>
+                        {bar.cheapest && (
+                          <div className={`font-display text-lg text-[var(--color-sun)] ${!bar.openState.open ? 'opacity-55' : ''}`}>
+                            {formatPrice(bar.cheapest.price, currency)}
+                          </div>
+                        )}
+                        <ChevronRight size={14} strokeWidth={1.4} className="opacity-50 shrink-0" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              {bar.cheapest && (
-                <div className={`font-display text-lg text-[var(--color-sun)] ${!bar.openState.open ? "opacity-55" : ""}`}>
-                  {formatPrice(bar.cheapest.price, currency)}
+            ));
+        })()
+      ) : (
+        <ul className="px-4 pb-6">
+          {filtered.map((bar, i) => (
+            <li key={bar.id}>
+              <Link to={`/bar/${bar.id}`} className="hairline-b-soft last:border-b-0 flex items-center gap-3 py-3">
+                <span className="num-rail text-[var(--color-blaze)] w-7 shrink-0">{String(i+1).padStart(2,"0")}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-display text-base uppercase truncate text-[var(--color-paper)]">{bar.name}</div>
+                  <div className="text-meta opacity-60 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full ${bar.openState.open ? "bg-[var(--color-verified)]" : "bg-[var(--color-paper)] opacity-35"}`} />
+                    {bar.area?.toUpperCase()}
+                    {bar.hasActiveHappy && <span className="text-[var(--color-sun)]">· HAPPY NOW</span>}
+                  </div>
                 </div>
-              )}
-              <ChevronRight size={14} strokeWidth={1.4} className="opacity-50 shrink-0" />
-            </Link>
-          </li>
-        ))}
-      </ul>
+                {bar.cheapest && (
+                  <div className={`font-display text-lg text-[var(--color-sun)] ${!bar.openState.open ? "opacity-55" : ""}`}>
+                    {formatPrice(bar.cheapest.price, currency)}
+                  </div>
+                )}
+                <ChevronRight size={14} strokeWidth={1.4} className="opacity-50 shrink-0" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

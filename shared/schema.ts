@@ -43,6 +43,7 @@ export const submissions = sqliteTable("submissions", {
   kind: text("kind").default("new").notNull(), // "new" | "update"
   previousPrice: real("previous_price"), // populated for update submissions
   status: text("status").default("pending").notNull(), // pending, approved, rejected
+  aiVerification: text("ai_verification"), // JSON result from Claude vision
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 

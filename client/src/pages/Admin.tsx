@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronRight, X } from "lucide-react";
+import { APP_VERSION, VERSION_DATE } from '../lib/version';
 import { trpc } from "../lib/trpc";
 import { LoadingMessage } from "../components/LoadingMessage";
 import SubmissionsQueue from "../admin/SubmissionsQueue";
@@ -43,7 +44,7 @@ export default function Admin({ onExit }: Props) {
   ];
 
   return (
-    <div className="grain-ink min-h-full pb-6">
+    <div className="grain-ink pb-6">
       <section className="px-4 pt-5 pb-4">
         <div className="text-eyebrow text-[var(--color-blaze)] mb-3">CONTROL ROOM · ADMIN</div>
         <h1 className="text-headline">WELCOME<br/>BACK</h1>
@@ -91,14 +92,19 @@ export default function Admin({ onExit }: Props) {
         </ul>
       </section>
 
-      {/* Exit */}
-      <button onClick={onExit} className="mt-6 mx-4 w-[calc(100%-2rem)] hairline-t flex items-center justify-between py-4 text-meta opacity-70">
-        <span className="flex items-center gap-2">
-          <X size={14} strokeWidth={1.6} />
-          EXIT ADMIN MODE
-        </span>
-        <span className="opacity-60">SESSION 30 MIN</span>
-      </button>
+      <div className="mt-6 mx-4">
+        <button onClick={onExit} className="w-full hairline-t flex items-center justify-between py-4 text-meta opacity-70">
+          <span className="flex items-center gap-2">
+            <X size={14} strokeWidth={1.6} />
+            EXIT ADMIN MODE
+          </span>
+          <span className="opacity-60">SESSION 30 MIN</span>
+        </button>
+        <div className="flex items-center justify-between py-2 text-meta opacity-30">
+          <span>VERSION</span>
+          <span>{APP_VERSION} · {VERSION_DATE}</span>
+        </div>
+      </div>
     </div>
   );
 }

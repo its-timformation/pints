@@ -42,7 +42,7 @@ export default function EditorsPick({ onBack }: Props) {
   const sortedBars = [...(bars ?? [])].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="grain-ink min-h-full pb-6">
+    <div className="grain-ink pb-6">
       <div className="px-4 py-3 flex items-center justify-between hairline-b">
         <button onClick={onBack} className="flex items-center gap-1.5 text-meta opacity-70">
           <ChevronLeft size={16} strokeWidth={1.6} />

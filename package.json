@@ -13,6 +13,7 @@
     "update:coords": "tsx scripts/updateCoords.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.0",
     "@fastify/multipart": "^10.0.0",
     "@fastify/static": "^9.0.0",
     "@hookform/resolvers": "^5.2.2",

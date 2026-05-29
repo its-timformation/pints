@@ -409,7 +409,7 @@ export const adminRouter = router({
 
   // Reports
   resolveReport: publicProcedure
-    .input(z.object({ id: z.number(), status: z.enum(["resolved", "dismissed"]) }))
+    .input(z.object({ id: z.number(), status: z.enum(["resolved", "dismissed", "bar_contacted"]) }))
     .mutation(async ({ input }) => {
       return db.update(barReports).set({ status: input.status }).where(eq(barReports.id, input.id)).returning();
     }),

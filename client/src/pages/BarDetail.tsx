@@ -14,6 +14,8 @@ export default function BarDetail() {
   const reportMutation = trpc.bars.report.useMutation();
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState<"closed"|"wrong_info"|"drink_not_served"|"other">("wrong_info");
+  const [reportDetail, setReportDetail] = useState('');
+  const [reportSuccess, setReportSuccess] = useState(false);
 
   if (isLoading || !bar) return <LoadingMessage surface="bar" />;
 
@@ -32,16 +34,19 @@ export default function BarDetail() {
 
   const submitReport = async () => {
     try {
-      await reportMutation.mutateAsync({ barId, reason: reportReason });
-      setReportOpen(false);
+      await reportMutation.mutateAsync({ barId, reason: reportReason, detail: reportDetail || undefined });
+      setReportSuccess(true);
+      setTimeout(() => {
+        setReportOpen(false);
+        setReportSuccess(false);
+      }, 2000);
     } catch (err: any) {
-      // Keep the sheet open and let the user see the message
       alert(err?.message ?? "Something went wrong.");
     }
   };
 
   return (
-    <div className="grain-ink min-h-full">
+    <div className="grain-ink">
       {/* Back row */}
       <div className="px-4 py-3 flex items-center justify-between">
         <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-meta opacity-70" aria-label="Go back">
@@ -214,32 +219,49 @@ export default function BarDetail() {
         <div className="fixed inset-0 z-[80] flex flex-col bg-[var(--color-ink)] bg-opacity-70" onClick={() => setReportOpen(false)}>
           <div className="mt-auto bg-[var(--color-paper)] text-[var(--color-ink)] sheet-enter" onClick={e => e.stopPropagation()}>
             <div className="self-center mt-3 mb-1 mx-auto w-10 h-1 bg-[var(--color-ink)] opacity-25 rounded" />
-            <div className="px-5 py-4">
-              <div className="text-eyebrow opacity-60">REPORT A PROBLEM</div>
-              <div className="font-display text-2xl uppercase mt-2">SOMETHING<br/>WRONG?</div>
-              <div className="mt-4 space-y-1.5">
-                {[
-                  ["closed","Bar permanently closed"],
-                  ["wrong_info","Wrong info"],
-                  ["drink_not_served","Drink not served"],
-                  ["other","Something else"],
-                ].map(([val,label]) => (
-                  <button
-                    key={val}
-                    onClick={() => setReportReason(val as any)}
-                    className={`w-full text-left px-3 min-h-[44px] border ${reportReason === val ? "bg-[var(--color-ink)] text-[var(--color-paper)] border-[var(--color-ink)]" : "border-[var(--color-rule-paper)]"}`}
-                  >
-                    <span className="text-meta">{label}</span>
-                  </button>
-                ))}
+            {reportSuccess ? (
+              <div className="px-5 py-8 text-center">
+                <div className="font-display text-2xl uppercase text-[var(--color-ink)]">THANKS</div>
+                <div className="text-meta opacity-60 mt-3">
+                  YOUR REPORT HAS BEEN RECEIVED. WE'LL LOOK INTO IT.
+                </div>
               </div>
-              <button onClick={submitReport} className="w-full mt-4 bg-[var(--color-blaze)] text-[var(--color-paper)] py-4 font-display text-lg uppercase min-h-[44px]">
-                SEND REPORT
-              </button>
-              <button onClick={() => setReportOpen(false)} className="w-full mt-2 text-meta opacity-55 py-4 min-h-[44px]">
-                CANCEL
-              </button>
-            </div>
+            ) : (
+              <div className="px-5 py-4">
+                <div className="text-eyebrow opacity-60">REPORT A PROBLEM</div>
+                <div className="font-display text-2xl uppercase mt-2">SOMETHING<br/>WRONG?</div>
+                <div className="mt-4 space-y-1.5">
+                  {[
+                    ["closed","Bar permanently closed"],
+                    ["wrong_info","Wrong info"],
+                    ["drink_not_served","Drink not served"],
+                    ["other","Something else"],
+                  ].map(([val,label]) => (
+                    <button
+                      key={val}
+                      onClick={() => setReportReason(val as any)}
+                      className={`w-full text-left px-3 min-h-[44px] border ${reportReason === val ? "bg-[var(--color-ink)] text-[var(--color-paper)] border-[var(--color-ink)]" : "border-[var(--color-rule-paper)]"}`}
+                    >
+                      <span className="text-meta">{label}</span>
+                    </button>
+                  ))}
+                  <textarea
+                    value={reportDetail}
+                    onChange={e => setReportDetail(e.target.value)}
+                    placeholder="Any extra details? (optional)"
+                    maxLength={500}
+                    rows={3}
+                    className="w-full bg-transparent border border-[var(--color-rule-paper)] px-3 py-2.5 text-[var(--color-ink)] text-sm resize-none mt-2 focus:outline-none focus:border-[var(--color-ink)]"
+                  />
+                </div>
+                <button onClick={submitReport} className="w-full mt-4 bg-[var(--color-blaze)] text-[var(--color-paper)] py-4 font-display text-lg uppercase min-h-[44px]">
+                  SEND REPORT
+                </button>
+                <button onClick={() => setReportOpen(false)} className="w-full mt-2 text-meta opacity-55 py-4 min-h-[44px]">
+                  CANCEL
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
