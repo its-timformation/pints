@@ -7,6 +7,8 @@
     <title>Pints du Soleil — Après index</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Anton&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap">
     <script>
       // Console & error capture for Capacity iframe
       (function () {
@@ -56,6 +58,76 @@
     <meta name="twitter:url" content="https://ski-bar-beer-price-tracker.capacity.studio" />
 </head>
   <body>
+    <div id="app-loader" style="
+      position: fixed;
+      inset: 0;
+      background: #0A0908;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.4s ease;
+      font-family: Anton, Impact, sans-serif;
+    ">
+      <svg width="72" height="72" viewBox="0 0 120 120" style="margin-bottom: 24px;">
+        <rect width="120" height="120" rx="24" fill="#E63E0B"/>
+        <path d="M28,21 L92,21 L84,99 Q84,105 78,105 L42,105 Q36,105 36,99 Z" fill="#0A0908"/>
+        <ellipse cx="60" cy="21" rx="32" ry="10" fill="#FBF5E0"/>
+        <text x="60" y="79" font-family="Anton, Impact, sans-serif" font-size="38" fill="#FBF5E0" text-anchor="middle">P</text>
+      </svg>
+
+      <div style="
+        color: #FBF5E0;
+        font-size: 22px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      ">PINTS DU SOLEIL</div>
+
+      <div style="
+        color: #FBF5E0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        opacity: 0.4;
+        margin-bottom: 48px;
+      ">APRÈS INDEX · PORTES DU SOLEIL</div>
+
+      <div id="loader-message" style="
+        color: #FBF5E0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        opacity: 0.5;
+      ">LOADING...</div>
+    </div>
+
+    <script>
+      const msgs = [
+        "WIPING DOWN THE BAR",
+        "LINING UP THE PINTS",
+        "CHECKING THE HAPPY HOURS",
+        "CONSULTING THE ORACLE OF VIN CHAUD",
+        "ASKING THE LIFTIES WHAT'S OPEN",
+        "TILTING THE MOUNTAIN",
+        "CRANKING OUT AN 8 BALL",
+        "COUNTING THE BOOTS OUTSIDE",
+        "WATCHING THE FOG LIFT OFF THE COL",
+        "WAITING FOR THE SURGE TO SETTLE",
+        "WRESTLING THE BROWN ALLIGATORS"
+      ];
+      let i = 0;
+      const el = document.getElementById('loader-message');
+      const interval = setInterval(() => {
+        i = (i + 1) % msgs.length;
+        if (el) el.textContent = msgs[i];
+      }, 2200);
+      window.__clearLoaderInterval = () => clearInterval(interval);
+    </script>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

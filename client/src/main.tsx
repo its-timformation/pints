@@ -40,3 +40,13 @@ createRoot(document.getElementById("root")!).render(
     <Root />
   </StrictMode>,
 );
+
+requestAnimationFrame(() => {
+  const loader = document.getElementById('app-loader');
+  if (loader) {
+    loader.style.opacity = '0';
+    loader.style.pointerEvents = 'none';
+    (window as any).__clearLoaderInterval?.();
+    setTimeout(() => loader.remove(), 500);
+  }
+});
