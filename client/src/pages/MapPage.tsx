@@ -97,7 +97,7 @@ export default function MapPage() {
   const barsWithDealsSet = new Set((deals ?? []).filter(d => d.isActive).map(d => d.barId));
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full">
       {/* Page header */}
       <div className="px-4 py-3 hairline-b flex items-center justify-between shrink-0">
         <div>

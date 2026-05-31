@@ -47,7 +47,7 @@ function TickerBand({ adminActive, onAdminTap }: { adminActive: boolean; onAdmin
     else if (location.pathname.startsWith('/admin')) pageLabel = 'ADMIN';
   }
   return (
-    <div className="bg-[var(--color-ink)] text-[var(--color-paper)] hairline-b">
+    <div data-shell="ticker" className="bg-[var(--color-ink)] text-[var(--color-paper)] hairline-b">
       <div className="max-w-md mx-auto px-4 py-2 flex items-center justify-between text-eyebrow opacity-70">
         <span>PORTES DU SOLEIL</span>
         <span>{dateStr}</span>
@@ -71,7 +71,7 @@ function Header({ onWordmarkTap }: { onWordmarkTap: () => void; }) {
   const { currency, setCurrency, stoutsMode } = useAppStore();
   const navigate = useNavigate();
   return (
-    <header className="sticky top-0 z-50 bg-[var(--color-ink)] hairline-b">
+    <header data-shell="header" className="bg-[var(--color-ink)] hairline-b">
       <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
         <button onClick={() => { onWordmarkTap(); navigate("/"); }} className="group" aria-label="Pints du Soleil home">
           <span className="font-display text-xl uppercase leading-none text-[var(--color-paper)] tracking-wide">
@@ -119,7 +119,7 @@ function BottomNav() {
   ];
 
   return (
-    <nav className="sticky bottom-0 z-40 bg-[var(--color-ink)] hairline-t pb-safe">
+    <nav data-shell="nav" className="bg-[var(--color-ink)] hairline-t pb-safe">
       <div className="max-w-md mx-auto grid grid-cols-3">
         {items.map(item => {
           const active = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
@@ -200,11 +200,39 @@ function Shell() {
     navigate("/");
   };
 
+  const isFullScreenPage = location.pathname.startsWith('/admin');
+
+  useEffect(() => {
+    function updateLayout() {
+      const ticker = document.querySelector('[data-shell="ticker"]');
+      const header = document.querySelector('[data-shell="header"]');
+      const nav = document.querySelector('[data-shell="nav"]');
+      const topH = (ticker?.clientHeight ?? 31) + (header?.clientHeight ?? 68);
+      const bottomH = nav?.clientHeight ?? 65;
+      document.documentElement.style.setProperty('--shell-top', `${topH}px`);
+      document.documentElement.style.setProperty('--shell-bottom', `${bottomH}px`);
+    }
+    updateLayout();
+    window.addEventListener('resize', updateLayout);
+    return () => window.removeEventListener('resize', updateLayout);
+  }, [location.pathname]);
+
   return (
-    <div className="flex flex-col h-[100dvh]">
-      <TickerBand adminActive={adminActive} onAdminTap={onAdminTap} />
-      <Header onWordmarkTap={onWordmarkTap} />
-      <main className="flex-1 min-h-0 overflow-y-auto">
+    <>
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <TickerBand adminActive={adminActive} onAdminTap={onAdminTap} />
+        <Header onWordmarkTap={onWordmarkTap} />
+      </div>
+
+      <main
+        className="absolute inset-0 overflow-y-auto"
+        style={{
+          paddingTop: 'var(--shell-top, 100px)',
+          paddingBottom: 'var(--shell-bottom, 80px)',
+          overscrollBehavior: 'contain',
+          WebkitOverflowScrolling: 'touch',
+        }}
+      >
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/map" element={<MapPage />} />
@@ -215,10 +243,16 @@ function Shell() {
           <Route path="/live" element={<LiveNow />} />
         </Routes>
       </main>
-      <BottomNav />
+
+      {!isFullScreenPage && (
+        <div className="fixed bottom-0 left-0 right-0 z-50">
+          <BottomNav />
+        </div>
+      )}
+
       {showSentry && <PinSentry onUnlock={onUnlock} onCancel={() => setShowSentry(false)} />}
       <BuildNotification isAdmin={adminActive} />
-    </div>
+    </>
   );
 }
 
