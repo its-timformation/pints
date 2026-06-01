@@ -44,7 +44,7 @@ function AddBarForm({ onCreated }: { onCreated: () => void }) {
   const createBar = trpc.admin.createBar.useMutation({ onSuccess: () => { onCreated(); setForm(BLANK); setOpen(false); } });
   const resolveMap = trpc.admin.resolveMapLink.useMutation();
   const [open, setOpen] = useState(false);
-  const BLANK = { name: '', type: 'bar', area: '', address: '', lat: 0, lng: 0, openingHours: '', websiteUrl: '', phoneNumber: '', googleMapsUrl: '', servesGuinness: false };
+  const BLANK = { name: '', type: 'bar', area: '', address: '', lat: 0, lng: 0, openingHours: '', websiteUrl: '', phoneNumber: '', googleMapsUrl: '', servesGuinness: false, businessStatus: '', rating: null as number | null };
   const [form, setForm] = useState(BLANK);
   const [mapInput, setMapInput] = useState('');
   const [mapStep, setMapStep] = useState<'idle' | 'resolving' | 'success' | 'error'>('idle');
@@ -63,6 +63,8 @@ function AddBarForm({ onCreated }: { onCreated: () => void }) {
       ...(result.phoneNumber ? { phoneNumber: result.phoneNumber } : {}),
       ...(result.openingHours ? { openingHours: result.openingHours } : {}),
       ...(result.address ? { address: result.address } : {}),
+      ...(result.businessStatus ? { businessStatus: result.businessStatus } : {}),
+      ...(result.rating != null ? { rating: result.rating } : {}),
     }));
     const parts = [
       `✓ ${(result.placeName || 'LOCATION').toUpperCase()} FOUND`,
@@ -207,6 +209,8 @@ function AddBarForm({ onCreated }: { onCreated: () => void }) {
               googleMapsUrl: form.googleMapsUrl || null,
               websiteUrl: form.websiteUrl || null,
               phoneNumber: form.phoneNumber || null,
+              rating: form.rating ?? null,
+              businessStatus: form.businessStatus || null,
             });
           }}
           disabled={createBar.isPending}
@@ -223,6 +227,8 @@ function AddBarForm({ onCreated }: { onCreated: () => void }) {
 export default function BarsManager({ onBack }: Props) {
   const { data: bars, refetch } = trpc.bars.getAll.useQuery();
   const deleteBar = trpc.admin.deleteBar.useMutation({ onSuccess: () => refetch() });
+  const refreshAll = trpc.admin.refreshAllBars.useMutation();
+  const [refreshResult, setRefreshResult] = useState<any>(null);
 
   const [expandedBar, setExpandedBar] = useState<number | null>(null);
   const [query, setQuery] = useState('');
@@ -417,6 +423,53 @@ export default function BarsManager({ onBack }: Props) {
             <FilterPill key={type} label={type} active={typeFilters.has(type)} onClick={() => setTypeFilters(s => toggleSet(s, type))} />
           ))}
         </div>
+      </div>
+
+      {/* Refresh all bar data */}
+      <div className="px-3 mb-1">
+        <button
+          onClick={async () => {
+            if (!confirm('Refresh data for all bars with a Google Maps link? This checks opening hours, status, and contact details. Takes about a minute.')) return;
+            setRefreshResult({ loading: true });
+            try {
+              const result = await refreshAll.mutateAsync();
+              setRefreshResult(result);
+              refetch();
+            } catch (e: any) {
+              setRefreshResult({ error: e.message });
+            }
+          }}
+          disabled={refreshAll.isPending}
+          className="w-full border border-[var(--color-rule)] py-2.5 text-meta mb-3 hover:border-[var(--color-blaze)] transition-colors disabled:opacity-40"
+        >
+          {refreshAll.isPending ? 'REFRESHING ALL BARS...' : '↻ REFRESH ALL BAR DATA'}
+        </button>
+
+        {refreshResult && !refreshResult.loading && (
+          <div className="mb-3 px-3 py-2.5 border border-[var(--color-rule)] text-meta">
+            {refreshResult.error ? (
+              <span className="text-[var(--color-blaze)]">{refreshResult.error}</span>
+            ) : (
+              <>
+                <div className="text-[var(--color-verified)]">
+                  ✓ UPDATED {refreshResult.updated} · FAILED {refreshResult.failed}
+                </div>
+                {refreshResult.tempClosed > 0 && (
+                  <div className="text-[var(--color-sun)] mt-1">
+                    ⚠ {refreshResult.tempClosed} TEMPORARILY CLOSED
+                  </div>
+                )}
+                {refreshResult.details?.length > 0 && (
+                  <div className="mt-1.5 opacity-60 space-y-0.5">
+                    {refreshResult.details.map((d: any, i: number) => (
+                      <div key={i}>{d.name}: {d.status}</div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Bar list */}

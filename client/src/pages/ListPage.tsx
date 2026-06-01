@@ -156,9 +156,15 @@ export default function ListPage() {
                         <div className="flex-1 min-w-0">
                           <div className="font-display text-base uppercase truncate text-[var(--color-paper)]">{bar.name}</div>
                           <div className="text-meta opacity-60 mt-0.5 flex items-center gap-1.5 flex-wrap">
-                            <span className={`inline-block w-1.5 h-1.5 rounded-full ${bar.openState.open ? 'bg-[var(--color-verified)]' : 'bg-[var(--color-paper)] opacity-35'}`} />
-                            {bar.openState.open ? `OPEN UNTIL ${bar.openState.closesAt}` : `CLOSED`}
-                            {bar.hasActiveHappy && <span className="text-[var(--color-sun)]">· HAPPY NOW</span>}
+                            {(bar as any).businessStatus === 'CLOSED_TEMPORARILY' ? (
+                              <span className="text-[var(--color-blaze)]">TEMP CLOSED</span>
+                            ) : (
+                              <>
+                                <span className={`inline-block w-1.5 h-1.5 rounded-full ${bar.openState.open ? 'bg-[var(--color-verified)]' : 'bg-[var(--color-paper)] opacity-35'}`} />
+                                {bar.openState.open ? `OPEN UNTIL ${bar.openState.closesAt}` : `CLOSED`}
+                                {bar.hasActiveHappy && <span className="text-[var(--color-sun)]">· HAPPY NOW</span>}
+                              </>
+                            )}
                           </div>
                         </div>
                         {bar.cheapest && (
@@ -183,9 +189,15 @@ export default function ListPage() {
                 <div className="flex-1 min-w-0">
                   <div className="font-display text-base uppercase truncate text-[var(--color-paper)]">{bar.name}</div>
                   <div className="text-meta opacity-60 mt-0.5 flex items-center gap-1.5 flex-wrap">
-                    <span className={`inline-block w-1.5 h-1.5 rounded-full ${bar.openState.open ? "bg-[var(--color-verified)]" : "bg-[var(--color-paper)] opacity-35"}`} />
-                    {bar.area?.toUpperCase()}
-                    {bar.hasActiveHappy && <span className="text-[var(--color-sun)]">· HAPPY NOW</span>}
+                    {(bar as any).businessStatus === 'CLOSED_TEMPORARILY' ? (
+                      <span className="text-[var(--color-blaze)]">TEMP CLOSED</span>
+                    ) : (
+                      <>
+                        <span className={`inline-block w-1.5 h-1.5 rounded-full ${bar.openState.open ? "bg-[var(--color-verified)]" : "bg-[var(--color-paper)] opacity-35"}`} />
+                        {bar.area?.toUpperCase()}
+                        {bar.hasActiveHappy && <span className="text-[var(--color-sun)]">· HAPPY NOW</span>}
+                      </>
+                    )}
                   </div>
                 </div>
                 {bar.cheapest && (

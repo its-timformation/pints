@@ -5,112 +5,115 @@ import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
+/* ── Module-level Places API helpers ──────────────────────────── */
+
+function extractCoordsFromUrl(url: string): { lat: number; lng: number } | null {
+  const at = url.match(/@(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
+  if (at) return { lat: parseFloat(at[1]), lng: parseFloat(at[2]) };
+  const d3 = url.match(/!3d(-?\d{1,3}\.\d{4,})/);
+  const d4 = url.match(/!4d(-?\d{1,3}\.\d{4,})/);
+  if (d3 && d4) return { lat: parseFloat(d3[1]), lng: parseFloat(d4[1]) };
+  const q = url.match(/[?&]q=(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
+  if (q) return { lat: parseFloat(q[1]), lng: parseFloat(q[2]) };
+  return null;
+}
+
+function extractPlaceNameFromUrl(url: string): string | null {
+  const m = url.match(/\/maps\/place\/([^/@?!]+)/);
+  if (!m) return null;
+  return decodeURIComponent(m[1].replace(/\+/g, ' ')).replace(/\s*[-,].+$/, '').trim();
+}
+
+async function followRedirect(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, {
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+        'Accept': 'text/html,application/xhtml+xml,*/*;q=0.8',
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    return res.url;
+  } catch {
+    return url;
+  }
+}
+
+async function callPlacesAPI(queries: string[], apiKey: string) {
+  for (const query of queries) {
+    try {
+      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': 'places.displayName,places.location,places.websiteUri,places.nationalPhoneNumber,places.regularOpeningHours,places.rating,places.googleMapsUri,places.formattedAddress,places.businessStatus',
+        },
+        body: JSON.stringify({
+          textQuery: query,
+          locationBias: {
+            circle: {
+              center: { latitude: 46.1893, longitude: 6.7741 },
+              radius: 50000.0,
+            },
+          },
+          maxResultCount: 1,
+        }),
+        signal: AbortSignal.timeout(8000),
+      });
+
+      if (!res.ok) {
+        console.error('Places API error:', res.status, await res.text());
+        continue;
+      }
+
+      const data = await res.json();
+      const place = data.places?.[0];
+      if (!place) continue;
+
+      const lat = place.location?.latitude;
+      const lng = place.location?.longitude;
+      if (!lat || !lng || lat < 43 || lat > 48 || lng < 4 || lng > 12) continue;
+
+      let openingHours: string | null = null;
+      const periods = place.regularOpeningHours?.periods;
+      if (periods?.length > 0) {
+        const p = periods[0];
+        if (p.open && p.close) {
+          const oh = String(p.open.hour ?? 0).padStart(2, '0');
+          const om = String(p.open.minute ?? 0).padStart(2, '0');
+          const ch = String(p.close.hour ?? 0).padStart(2, '0');
+          const cm = String(p.close.minute ?? 0).padStart(2, '0');
+          openingHours = `${oh}:${om}-${ch}:${cm}`;
+        }
+      }
+
+      return {
+        lat, lng,
+        websiteUrl: place.websiteUri ?? null,
+        phoneNumber: place.nationalPhoneNumber ?? null,
+        openingHours,
+        rating: place.rating ?? null,
+        googleMapsUrl: place.googleMapsUri ?? null,
+        fullName: place.displayName?.text ?? null,
+        address: place.formattedAddress ?? null,
+        businessStatus: (place.businessStatus as string) ?? 'OPERATIONAL',
+      };
+    } catch (e) {
+      console.error('Places API fetch failed for query:', query, e);
+    }
+  }
+  return null;
+}
+
+/* ── Router ────────────────────────────────────────────────────── */
+
 export const adminRouter = router({
   resolveMapLink: publicProcedure
     .input(z.object({ url: z.string() }))
     .mutation(async ({ input }) => {
       const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-
-      function extractCoordsFromUrl(url: string): { lat: number; lng: number } | null {
-        const at = url.match(/@(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
-        if (at) return { lat: parseFloat(at[1]), lng: parseFloat(at[2]) };
-        const d3 = url.match(/!3d(-?\d{1,3}\.\d{4,})/);
-        const d4 = url.match(/!4d(-?\d{1,3}\.\d{4,})/);
-        if (d3 && d4) return { lat: parseFloat(d3[1]), lng: parseFloat(d4[1]) };
-        const q = url.match(/[?&]q=(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/);
-        if (q) return { lat: parseFloat(q[1]), lng: parseFloat(q[2]) };
-        return null;
-      }
-
-      function extractPlaceNameFromUrl(url: string): string | null {
-        const m = url.match(/\/maps\/place\/([^/@?!]+)/);
-        if (!m) return null;
-        return decodeURIComponent(m[1].replace(/\+/g, ' ')).replace(/\s*[-,].+$/, '').trim();
-      }
-
-      async function followRedirect(url: string): Promise<string> {
-        try {
-          const res = await fetch(url, {
-            redirect: 'follow',
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-              'Accept': 'text/html,application/xhtml+xml,*/*;q=0.8',
-            },
-            signal: AbortSignal.timeout(8000),
-          });
-          return res.url;
-        } catch {
-          return url;
-        }
-      }
-
-      async function callPlacesAPI(queries: string[]) {
-        if (!apiKey) return null;
-
-        for (const query of queries) {
-          try {
-            const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-Goog-Api-Key': apiKey,
-                'X-Goog-FieldMask': 'places.displayName,places.location,places.websiteUri,places.nationalPhoneNumber,places.regularOpeningHours,places.rating,places.googleMapsUri,places.formattedAddress',
-              },
-              body: JSON.stringify({
-                textQuery: query,
-                locationBias: {
-                  circle: {
-                    center: { latitude: 46.1893, longitude: 6.7741 },
-                    radius: 50000.0,
-                  },
-                },
-                maxResultCount: 1,
-              }),
-              signal: AbortSignal.timeout(8000),
-            });
-
-            if (!res.ok) {
-              console.error('Places API error:', res.status, await res.text());
-              continue;
-            }
-
-            const data = await res.json();
-            const place = data.places?.[0];
-            if (!place) continue;
-
-            const lat = place.location?.latitude;
-            const lng = place.location?.longitude;
-            if (!lat || !lng || lat < 43 || lat > 48 || lng < 4 || lng > 12) continue;
-
-            let openingHours: string | null = null;
-            const periods = place.regularOpeningHours?.periods;
-            if (periods?.length > 0) {
-              const p = periods[0];
-              if (p.open && p.close) {
-                const oh = String(p.open.hour ?? 0).padStart(2, '0');
-                const om = String(p.open.minute ?? 0).padStart(2, '0');
-                const ch = String(p.close.hour ?? 0).padStart(2, '0');
-                const cm = String(p.close.minute ?? 0).padStart(2, '0');
-                openingHours = `${oh}:${om}-${ch}:${cm}`;
-              }
-            }
-
-            return {
-              lat, lng,
-              websiteUrl: place.websiteUri ?? null,
-              phoneNumber: place.nationalPhoneNumber ?? null,
-              openingHours,
-              rating: place.rating ?? null,
-              googleMapsUrl: place.googleMapsUri ?? null,
-              fullName: place.displayName?.text ?? null,
-              address: place.formattedAddress ?? null,
-            };
-          } catch (e) {
-            console.error('Places API fetch failed for query:', query, e);
-          }
-        }
-        return null;
-      }
 
       try {
         const finalUrl = await followRedirect(input.url);
@@ -129,7 +132,7 @@ export const adminRouter = router({
             ...nameVariants.map(n => `${n} bar`),
           ];
 
-          const placeData = await callPlacesAPI(queries);
+          const placeData = await callPlacesAPI(queries, apiKey);
           if (placeData) {
             return {
               lat: placeData.lat,
@@ -142,6 +145,7 @@ export const adminRouter = router({
               rating: placeData.rating,
               googleMapsUrl: placeData.googleMapsUrl ?? finalUrl,
               finalUrl: placeData.googleMapsUrl ?? finalUrl,
+              businessStatus: placeData.businessStatus ?? 'OPERATIONAL',
               source: 'places_api' as const,
             };
           }
@@ -178,6 +182,100 @@ export const adminRouter = router({
           message: 'Failed to resolve link: ' + e.message,
         });
       }
+    }),
+
+  refreshBarData: publicProcedure
+    .input(z.object({ barId: z.number() }))
+    .mutation(async ({ input }) => {
+      const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+      if (!apiKey) throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'No API key' });
+
+      const bar = (await db.select().from(bars).where(eq(bars.id, input.barId)))[0];
+      if (!bar) throw new TRPCError({ code: 'NOT_FOUND', message: 'Bar not found' });
+      if (!bar.googleMapsUrl) {
+        throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'No Google Maps link saved for this bar' });
+      }
+
+      const finalUrl = await followRedirect(bar.googleMapsUrl);
+      const placeName = extractPlaceNameFromUrl(finalUrl) || bar.name;
+      const nameVariants = [
+        placeName,
+        placeName.replace(/^(Le|La|Les|L')\s+/i, ''),
+      ].filter((v, i, arr) => v && arr.indexOf(v) === i);
+      const queries = [
+        ...nameVariants.map(n => `${n} ${bar.area} bar`),
+        ...nameVariants.map(n => `${n} bar`),
+      ];
+      const placeData = await callPlacesAPI(queries, apiKey);
+      if (!placeData) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: `Could not refresh "${bar.name}"` });
+      }
+
+      const updates: any = {
+        lat: placeData.lat,
+        lng: placeData.lng,
+        businessStatus: placeData.businessStatus ?? 'OPERATIONAL',
+      };
+      if (placeData.websiteUrl) updates.websiteUrl = placeData.websiteUrl;
+      if (placeData.phoneNumber) updates.phoneNumber = placeData.phoneNumber;
+      if (placeData.openingHours) updates.openingHours = placeData.openingHours;
+      if (placeData.rating != null) updates.rating = placeData.rating;
+
+      await db.update(bars).set(updates).where(eq(bars.id, input.barId));
+      return { ...updates, name: bar.name, placeName: placeData.fullName };
+    }),
+
+  refreshAllBars: publicProcedure
+    .mutation(async () => {
+      const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+      if (!apiKey) throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'No API key' });
+
+      const allBars = await db.select().from(bars);
+      const withLinks = allBars.filter(b => b.googleMapsUrl);
+
+      const results = { updated: 0, failed: 0, tempClosed: 0, details: [] as any[] };
+
+      for (const bar of withLinks) {
+        try {
+          const finalUrl = await followRedirect(bar.googleMapsUrl!);
+          const placeName = extractPlaceNameFromUrl(finalUrl) || bar.name;
+          const nameVariants = [placeName, placeName.replace(/^(Le|La|Les|L')\s+/i, '')]
+            .filter((v, i, arr) => v && arr.indexOf(v) === i);
+          const queries = [
+            ...nameVariants.map(n => `${n} ${bar.area} bar`),
+            ...nameVariants.map(n => `${n} bar`),
+          ];
+          const placeData = await callPlacesAPI(queries, apiKey);
+
+          if (placeData) {
+            const updates: any = {
+              lat: placeData.lat,
+              lng: placeData.lng,
+              businessStatus: placeData.businessStatus ?? 'OPERATIONAL',
+            };
+            if (placeData.websiteUrl) updates.websiteUrl = placeData.websiteUrl;
+            if (placeData.phoneNumber) updates.phoneNumber = placeData.phoneNumber;
+            if (placeData.openingHours) updates.openingHours = placeData.openingHours;
+            if (placeData.rating != null) updates.rating = placeData.rating;
+
+            await db.update(bars).set(updates).where(eq(bars.id, bar.id));
+            results.updated++;
+            if (updates.businessStatus === 'CLOSED_TEMPORARILY') {
+              results.tempClosed++;
+              results.details.push({ name: bar.name, status: 'TEMPORARILY CLOSED' });
+            }
+          } else {
+            results.failed++;
+            results.details.push({ name: bar.name, status: 'NOT FOUND' });
+          }
+        } catch {
+          results.failed++;
+          results.details.push({ name: bar.name, status: 'ERROR' });
+        }
+        await new Promise(r => setTimeout(r, 250));
+      }
+
+      return results;
     }),
 
   getSubmissions: publicProcedure
@@ -257,6 +355,8 @@ export const adminRouter = router({
       googleMapsUrl: z.string().optional().nullable(),
       websiteUrl: z.string().optional().nullable(),
       phoneNumber: z.string().max(30).optional().nullable(),
+      rating: z.number().optional().nullable(),
+      businessStatus: z.string().optional().nullable(),
     }))
     .mutation(async ({ input }) => {
       return db.insert(bars).values(input).returning();
@@ -319,6 +419,7 @@ export const adminRouter = router({
       websiteUrl: z.string().optional().nullable(),
       phoneNumber: z.string().max(30).optional().nullable(),
       rating: z.number().optional().nullable(),
+      businessStatus: z.string().optional().nullable(),
     }))
     .mutation(async ({ input }) => {
       const { id, ...data } = input;

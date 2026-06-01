@@ -67,6 +67,11 @@ export default function BarDetail() {
       <section className="grain-blaze text-[var(--color-paper)] px-5 py-6">
         <div className="text-eyebrow opacity-90">DRINKING ESTABLISHMENT · {bar.type?.toUpperCase()}</div>
         <h1 className="text-headline mt-3">{bar.name}</h1>
+        {bar.businessStatus === 'CLOSED_TEMPORARILY' && (
+          <div className="inline-block bg-[var(--color-blaze)] text-[var(--color-paper)] px-2 py-1 text-meta mt-2 mb-1">
+            ⚠ TEMPORARILY CLOSED
+          </div>
+        )}
         <div className="mt-4 flex items-end justify-between gap-3">
           <div>
             <div className="text-meta opacity-90">{bar.area?.toUpperCase()}</div>

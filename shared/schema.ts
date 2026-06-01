@@ -13,6 +13,7 @@ export const bars = sqliteTable("bars", {
   openingHours: text("opening_hours"), // simple string "HH:MM-HH:MM" or JSON
   servesGuinness: integer("serves_guinness", { mode: "boolean" }).default(false).notNull(),
   googleMapsUrl: text("google_maps_url"),
+  businessStatus: text("business_status"), // OPERATIONAL | CLOSED_TEMPORARILY | CLOSED_PERMANENTLY
   websiteUrl: text("website_url"),
   phoneNumber: text("phone_number"),
   rating: real("rating"),
