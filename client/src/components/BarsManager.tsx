@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { ChevronLeft, Trash2, Edit2, ChevronDown, ChevronUp, X, Upload, Search, Plus } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { GroupedList } from "./admin/GroupedList";
@@ -587,10 +587,36 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
   const updateBar = trpc.admin.updateBar.useMutation({ onSuccess: () => { refetch(); onUpdate(); } });
   const resolveMap = trpc.admin.resolveMapLink.useMutation();
   const createDrink = trpc.admin.createDrink.useMutation({ onSuccess: () => { refetch(); setAddDrinkOpen(false); setDrinkForm(BLANK_DRINK); } });
+  const scrapeMenu = trpc.admin.scrapeMenu.useMutation();
+  const createBulk = trpc.admin.createDrinksBulk.useMutation({ onSuccess: () => { refetch(); setScrapedDrinks(null); setScrapeStatus('idle'); } });
 
   const BLANK_DRINK = { name: '', size: 'Pint', price: '', currency: 'EUR' };
   const [addDrinkOpen, setAddDrinkOpen] = useState(false);
   const [drinkForm, setDrinkForm] = useState(BLANK_DRINK);
+
+  const [scrapedDrinks, setScrapedDrinks] = useState<any[] | null>(null);
+  const [scrapeStatus, setScrapeStatus] = useState<'idle' | 'reading' | 'review' | 'error'>('idle');
+  const [scrapeMsg, setScrapeMsg] = useState('');
+  const menuInputRef = useRef<HTMLInputElement>(null);
+
+  const handleMenuImage = useCallback(async (file: File) => {
+    setScrapeStatus('reading');
+    setScrapeMsg('READING MENU...');
+    try {
+      const base64 = await new Promise<string>((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res((r.result as string).split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      const result = await scrapeMenu.mutateAsync({ base64Image: base64, mediaType: file.type });
+      setScrapedDrinks(result.map((d: any) => ({ ...d, include: true })));
+      setScrapeStatus('review');
+    } catch (e: any) {
+      setScrapeStatus('error');
+      setScrapeMsg(e.message || 'COULD NOT READ MENU');
+    }
+  }, [scrapeMenu]);
 
   const [editingBar, setEditingBar] = useState(false);
   const [barForm, setBarForm] = useState(barData);
@@ -801,14 +827,123 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
       <div>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-eyebrow opacity-70">DRINKS</h3>
-          <button
-            onClick={() => { setAddDrinkOpen(!addDrinkOpen); setDrinkForm(BLANK_DRINK); }}
-            className="flex items-center gap-1 text-meta text-[var(--color-blaze)] min-h-[44px] px-2"
-          >
-            {addDrinkOpen ? <X size={12} /> : <Plus size={12} />}
-            {addDrinkOpen ? 'CANCEL' : 'ADD DRINK'}
-          </button>
+          <div className="flex items-center">
+            <button
+              onClick={() => menuInputRef.current?.click()}
+              disabled={scrapeStatus === 'reading'}
+              className="flex items-center gap-1 text-meta text-[var(--color-paper)] opacity-60 hover:opacity-100 min-h-[44px] px-2 disabled:opacity-30"
+              title="Scan a menu photo"
+            >
+              📷 SCAN
+            </button>
+            <input
+              ref={menuInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleMenuImage(f); e.target.value = ''; }}
+            />
+            <button
+              onClick={() => { setAddDrinkOpen(!addDrinkOpen); setDrinkForm(BLANK_DRINK); }}
+              className="flex items-center gap-1 text-meta text-[var(--color-blaze)] min-h-[44px] px-2"
+            >
+              {addDrinkOpen ? <X size={12} /> : <Plus size={12} />}
+              {addDrinkOpen ? 'CANCEL' : 'ADD DRINK'}
+            </button>
+          </div>
         </div>
+
+        {scrapeStatus === 'reading' && (
+          <div className="mb-3 px-3 py-2.5 border border-[var(--color-rule)] text-meta opacity-60 animate-pulse">
+            {scrapeMsg}
+          </div>
+        )}
+
+        {scrapeStatus === 'error' && (
+          <div className="mb-3 px-3 py-2.5 border border-[var(--color-blaze)] text-meta text-[var(--color-blaze)]">
+            {scrapeMsg}
+            <button onClick={() => setScrapeStatus('idle')} className="ml-3 opacity-60 hover:opacity-100">DISMISS</button>
+          </div>
+        )}
+
+        {scrapeStatus === 'review' && scrapedDrinks && (
+          <div className="mb-3 border border-[var(--color-rule)] bg-[var(--color-ink-card)] bg-opacity-50">
+            <div className="px-3 py-2 flex items-center justify-between border-b border-[var(--color-rule)]">
+              <div>
+                <span className="text-eyebrow text-[var(--color-blaze)]">MENU SCAN REVIEW</span>
+                <span className="text-meta opacity-40 ml-2">~1–3p per scan</span>
+              </div>
+              <button onClick={() => { setScrapeStatus('idle'); setScrapedDrinks(null); }} className="text-meta opacity-50 hover:opacity-100 min-h-[44px] px-2">DISCARD</button>
+            </div>
+
+            <div className="max-h-80 overflow-y-auto">
+              {scrapedDrinks.map((d, i) => (
+                <div key={i} className={`flex items-center gap-1.5 px-3 py-1.5 border-b border-[var(--color-rule)] last:border-b-0 ${!d.include ? 'opacity-40' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={d.include}
+                    onChange={e => setScrapedDrinks(prev => prev!.map((r, j) => j === i ? { ...r, include: e.target.checked } : r))}
+                    className="w-4 h-4 shrink-0"
+                  />
+                  <input
+                    type="text"
+                    value={d.name}
+                    onChange={e => setScrapedDrinks(prev => prev!.map((r, j) => j === i ? { ...r, name: e.target.value } : r))}
+                    className="flex-1 min-w-0 bg-transparent border border-[var(--color-rule)] px-2 py-1 text-sm font-display uppercase focus:outline-none focus:border-[var(--color-blaze)]"
+                  />
+                  <input
+                    type="text"
+                    value={d.size ?? ''}
+                    onChange={e => setScrapedDrinks(prev => prev!.map((r, j) => j === i ? { ...r, size: e.target.value || null } : r))}
+                    placeholder="size"
+                    className="w-16 bg-transparent border border-[var(--color-rule)] px-2 py-1 text-sm focus:outline-none focus:border-[var(--color-blaze)]"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={d.price}
+                    onChange={e => setScrapedDrinks(prev => prev!.map((r, j) => j === i ? { ...r, price: parseFloat(e.target.value) || 0 } : r))}
+                    className="w-16 bg-transparent border border-[var(--color-rule)] px-2 py-1 text-sm focus:outline-none focus:border-[var(--color-blaze)]"
+                  />
+                  <select
+                    value={d.currency}
+                    onChange={e => setScrapedDrinks(prev => prev!.map((r, j) => j === i ? { ...r, currency: e.target.value } : r))}
+                    className="bg-transparent border border-[var(--color-rule)] px-1 py-1 text-meta text-[var(--color-paper)]"
+                  >
+                    <option value="EUR" className="bg-[var(--color-ink)]">€</option>
+                    <option value="GBP" className="bg-[var(--color-ink)]">£</option>
+                    <option value="CHF" className="bg-[var(--color-ink)]">Fr</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setScrapedDrinks(prev => prev!.filter((_, j) => j !== i))}
+                    className="shrink-0 opacity-40 hover:opacity-100 hover:text-[var(--color-blaze)] min-h-[44px] px-1"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="px-3 py-2 border-t border-[var(--color-rule)]">
+              {(() => {
+                const toCreate = scrapedDrinks.filter(d => d.include && d.name && d.price > 0);
+                return (
+                  <button
+                    onClick={() => createBulk.mutate({
+                      barId,
+                      drinks: toCreate.map(d => ({ name: d.name, size: d.size, price: d.price, currency: d.currency })),
+                    })}
+                    disabled={createBulk.isPending || toCreate.length === 0}
+                    className="w-full bg-[var(--color-blaze)] text-[var(--color-paper)] py-2.5 font-display uppercase text-sm disabled:opacity-40"
+                  >
+                    {createBulk.isPending ? 'CREATING…' : `CREATE ${toCreate.length} DRINK${toCreate.length !== 1 ? 'S' : ''}`}
+                  </button>
+                );
+              })()}
+            </div>
+          </div>
+        )}
 
         {addDrinkOpen && (
           <div className="mb-3 p-3 border border-[var(--color-blaze)] space-y-2">

@@ -118,18 +118,6 @@ export default function SubmissionsQueue({ onBack }: Props) {
                   </div>
                 </div>
 
-                {(() => {
-                  if (!sub.aiVerification) return null;
-                  try {
-                    const ai = JSON.parse(sub.aiVerification);
-                    return (
-                      <div className={`mt-2 px-2 py-1.5 text-meta ${ai.autoApprove ? 'bg-[var(--color-verified)] bg-opacity-20 text-[var(--color-verified)]' : 'border border-[var(--color-rule)] opacity-70'}`}>
-                        {ai.autoApprove ? '✓ AI VERIFIED · AUTO-APPROVED' : `AI: ${ai.reasoning}`}
-                      </div>
-                    );
-                  } catch { return null; }
-                })()}
-
                 <div className="flex gap-1.5 mt-3">
                   <button onClick={() => resolve(sub.id, "reject")} className="flex-1 border border-[var(--color-rule)] min-h-[44px]">
                     <span className="text-meta text-[var(--color-blaze)] flex items-center justify-center gap-1.5">

@@ -1,5 +1,6 @@
 import { router, publicProcedure } from "../trpc";
 import { db } from "../db";
+import { scrapeMenuImage } from "../services/menuScraper";
 import { bars, drinks, deals, submissions, barReports, editorsPick, appSettings } from "../../shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
@@ -276,6 +277,44 @@ export const adminRouter = router({
       }
 
       return results;
+    }),
+
+  scrapeMenu: publicProcedure
+    .input(z.object({
+      base64Image: z.string(),
+      mediaType: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const result = await scrapeMenuImage(input.base64Image, input.mediaType);
+      if (result.error) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: result.error });
+      }
+      return result.drinks;
+    }),
+
+  createDrinksBulk: publicProcedure
+    .input(z.object({
+      barId: z.number(),
+      drinks: z.array(z.object({
+        name: z.string(),
+        size: z.string().nullable(),
+        price: z.number(),
+        currency: z.string(),
+      })),
+    }))
+    .mutation(async ({ input }) => {
+      const now = new Date().toISOString();
+      const rows = input.drinks.map(d => ({
+        barId: input.barId,
+        name: d.name,
+        size: d.size ?? undefined,
+        price: d.price,
+        currency: d.currency,
+        isVerified: true as const,
+        verifiedAt: now,
+      }));
+      await db.insert(drinks).values(rows);
+      return { created: rows.length };
     }),
 
   getCustomSizes: publicProcedure
