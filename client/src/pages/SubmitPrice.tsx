@@ -1,23 +1,14 @@
 import { useState } from "react";
-import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { trpc } from "../lib/trpc";
-import { useAppStore } from "../lib/store";
 import { Upload, CheckCircle2, ChevronLeft, Camera } from "lucide-react";
-
-const DRINK_SUGGESTIONS = [
-  "Kronenbourg 1664", "1664 Blanc", "Heineken", "Stella Artois", "Carlsberg",
-  "Mutzig", "Guinness", "Local IPA", "Vin Chaud", "Génépi Shot",
-  "Aperol Spritz", "House Red", "House White", "Espresso", "Hot Chocolate",
-  "Picon Bière", "Jägertee", "Mulled Cider"
-];
-const SIZE_OPTIONS = ["Pint", "50cl", "33cl", "25cl", "4cl Shot", "Glass", "Mug", "Cup"];
+import { DrinkNameInput } from "../components/DrinkNameInput";
+import { SizeSelect } from "../components/SizeSelect";
 
 export default function SubmitPrice() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { currency: storeCurrency } = useAppStore();
-
   const isUpdate = searchParams.get("update") === "1";
   const initialDrink = searchParams.get("drink") || "";
   const initialSize = searchParams.get("size") || "Pint";
@@ -25,7 +16,7 @@ export default function SubmitPrice() {
   const [drinkName, setDrinkName] = useState(initialDrink);
   const [size, setSize] = useState(initialSize || "Pint");
   const [price, setPrice] = useState("");
-  const [currency, setCurrency] = useState(storeCurrency);
+  const [currency, setCurrency] = useState('EUR');
   const [name, setName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -110,26 +101,16 @@ export default function SubmitPrice() {
 
       <form onSubmit={handleSubmit} className="px-5 mt-5 space-y-4">
         <Field label="DRINK NAME">
-          <input
-            type="text"
-            list="drink-suggestions"
+          <DrinkNameInput
             value={drinkName}
-            onChange={(e) => setDrinkName(e.target.value)}
+            onChange={setDrinkName}
             required
             disabled={isUpdate}
-            className="w-full bg-transparent border border-[var(--color-rule)] text-[var(--color-paper)] px-3 py-3 focus:outline-none focus:border-[var(--color-blaze)] disabled:opacity-50"
-            placeholder="e.g. Kronenbourg 1664"
           />
-          <datalist id="drink-suggestions">
-            {DRINK_SUGGESTIONS.map(d => <option key={d} value={d} />)}
-          </datalist>
         </Field>
 
         <Field label="SIZE">
-          <select value={size} onChange={(e) => setSize(e.target.value)}
-            className="w-full bg-transparent border border-[var(--color-rule)] text-[var(--color-paper)] px-3 py-3 focus:outline-none focus:border-[var(--color-blaze)]">
-            {SIZE_OPTIONS.map(s => <option key={s} value={s} className="bg-[var(--color-ink)]">{s}</option>)}
-          </select>
+          <SizeSelect value={size} onChange={setSize} />
         </Field>
 
         <div className="grid grid-cols-3 gap-3">

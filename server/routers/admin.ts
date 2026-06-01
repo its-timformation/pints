@@ -1,6 +1,6 @@
 import { router, publicProcedure } from "../trpc";
 import { db } from "../db";
-import { bars, drinks, deals, submissions, barReports, editorsPick } from "../../shared/schema";
+import { bars, drinks, deals, submissions, barReports, editorsPick, appSettings } from "../../shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -276,6 +276,30 @@ export const adminRouter = router({
       }
 
       return results;
+    }),
+
+  getCustomSizes: publicProcedure
+    .query(async () => {
+      const row = (await db.select().from(appSettings).where(eq(appSettings.key, 'custom_drink_sizes')))[0];
+      if (!row?.value) return [] as string[];
+      try { return JSON.parse(row.value) as string[]; } catch { return [] as string[]; }
+    }),
+
+  addCustomSize: publicProcedure
+    .input(z.object({ size: z.string().min(1).max(20) }))
+    .mutation(async ({ input }) => {
+      const normalized = input.size.trim();
+      if (!normalized) return [] as string[];
+      const row = (await db.select().from(appSettings).where(eq(appSettings.key, 'custom_drink_sizes')))[0];
+      const current: string[] = row?.value ? JSON.parse(row.value) : [];
+      if (current.includes(normalized)) return current;
+      const next = [...current, normalized];
+      if (row) {
+        await db.update(appSettings).set({ value: JSON.stringify(next) }).where(eq(appSettings.key, 'custom_drink_sizes'));
+      } else {
+        await db.insert(appSettings).values({ key: 'custom_drink_sizes', value: JSON.stringify(next) });
+      }
+      return next;
     }),
 
   getSubmissions: publicProcedure

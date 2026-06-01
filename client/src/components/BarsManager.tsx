@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { ChevronLeft, Trash2, Edit2, ChevronDown, ChevronUp, X, Upload, Search } from "lucide-react";
+import { ChevronLeft, Trash2, Edit2, ChevronDown, ChevronUp, X, Upload, Search, Plus } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { GroupedList } from "./admin/GroupedList";
+import { DrinkNameInput } from "./DrinkNameInput";
+import { SizeSelect } from "./SizeSelect";
 
 interface Props { onBack: () => void; }
 
@@ -584,6 +586,11 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
   const deleteDeal = trpc.admin.deleteDeal.useMutation({ onSuccess: () => refetch() });
   const updateBar = trpc.admin.updateBar.useMutation({ onSuccess: () => { refetch(); onUpdate(); } });
   const resolveMap = trpc.admin.resolveMapLink.useMutation();
+  const createDrink = trpc.admin.createDrink.useMutation({ onSuccess: () => { refetch(); setAddDrinkOpen(false); setDrinkForm(BLANK_DRINK); } });
+
+  const BLANK_DRINK = { name: '', size: 'Pint', price: '', currency: 'EUR' };
+  const [addDrinkOpen, setAddDrinkOpen] = useState(false);
+  const [drinkForm, setDrinkForm] = useState(BLANK_DRINK);
 
   const [editingBar, setEditingBar] = useState(false);
   const [barForm, setBarForm] = useState(barData);
@@ -792,7 +799,68 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
       </div>
 
       <div>
-        <h3 className="text-eyebrow opacity-70 mb-2">DRINKS</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-eyebrow opacity-70">DRINKS</h3>
+          <button
+            onClick={() => { setAddDrinkOpen(!addDrinkOpen); setDrinkForm(BLANK_DRINK); }}
+            className="flex items-center gap-1 text-meta text-[var(--color-blaze)] min-h-[44px] px-2"
+          >
+            {addDrinkOpen ? <X size={12} /> : <Plus size={12} />}
+            {addDrinkOpen ? 'CANCEL' : 'ADD DRINK'}
+          </button>
+        </div>
+
+        {addDrinkOpen && (
+          <div className="mb-3 p-3 border border-[var(--color-blaze)] space-y-2">
+            <DrinkNameInput
+              value={drinkForm.name}
+              onChange={v => setDrinkForm(f => ({ ...f, name: v }))}
+              placeholder="Drink name"
+            />
+            <SizeSelect
+              value={drinkForm.size}
+              onChange={v => setDrinkForm(f => ({ ...f, size: v }))}
+            />
+            <div className="flex gap-2">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={drinkForm.price}
+                onChange={e => setDrinkForm(f => ({ ...f, price: e.target.value }))}
+                placeholder="Price"
+                className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm"
+              />
+              <select
+                value={drinkForm.currency}
+                onChange={e => setDrinkForm(f => ({ ...f, currency: e.target.value }))}
+                className="bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-2 min-h-[44px] text-sm text-[var(--color-paper)]"
+              >
+                <option value="EUR" className="bg-[var(--color-ink)]">EUR</option>
+                <option value="GBP" className="bg-[var(--color-ink)]">GBP</option>
+                <option value="CHF" className="bg-[var(--color-ink)]">CHF</option>
+              </select>
+            </div>
+            <button
+              onClick={() => {
+                if (!drinkForm.name || !drinkForm.price) return;
+                createDrink.mutate({
+                  barId,
+                  name: drinkForm.name,
+                  size: drinkForm.size || undefined,
+                  price: parseFloat(drinkForm.price),
+                  currency: drinkForm.currency,
+                  isVerified: true,
+                });
+              }}
+              disabled={createDrink.isPending || !drinkForm.name || !drinkForm.price}
+              className="w-full bg-[var(--color-blaze)] text-[var(--color-paper)] py-2.5 font-display uppercase text-sm disabled:opacity-40"
+            >
+              {createDrink.isPending ? 'SAVING…' : 'SAVE DRINK'}
+            </button>
+          </div>
+        )}
+
         <div className="space-y-1.5">
           {barDetails.drinks?.map(drink => (
             <DrinkRow key={drink.id} drink={drink} onDelete={() => deleteDrink.mutate({ id: drink.id })} onUpdate={refetch} />

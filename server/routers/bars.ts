@@ -1,7 +1,7 @@
 import { router, publicProcedure } from "../trpc";
 import { db } from "../db";
 import { bars, drinks, deals, submissions, barReports, editorsPick } from "../../shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, like } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { rateLimit } from "../rateLimit";
@@ -56,6 +56,20 @@ export const barsRouter = router({
   getDeals: publicProcedure.query(async () => {
     return db.select().from(deals);
   }),
+
+  searchDrinkNames: publicProcedure
+    .input(z.object({ q: z.string() }))
+    .query(async ({ input }) => {
+      const q = input.q.trim();
+      if (!q) return [] as string[];
+      const rows = await db
+        .select({ name: drinks.name })
+        .from(drinks)
+        .where(like(drinks.name, `%${q}%`))
+        .groupBy(drinks.name)
+        .limit(8);
+      return rows.map(r => r.name);
+    }),
 
   submitPrice: publicProcedure
     .input(z.object({

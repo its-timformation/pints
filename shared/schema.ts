@@ -92,6 +92,11 @@ export const pushSubscriptions = sqliteTable("push_subscriptions", {
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
+export const appSettings = sqliteTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: text("value"),
+});
+
 // Infer types
 export type Bar = typeof bars.$inferSelect;
 export type InsertBar = typeof bars.$inferInsert;
