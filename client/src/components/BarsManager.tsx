@@ -997,7 +997,7 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
         )}
 
         {addDrinkOpen && (
-          <div className="mb-3 p-3 border border-[var(--color-blaze)] space-y-2">
+          <div key="add-drink-form" className="mb-3 p-3 border border-[var(--color-blaze)] space-y-2">
             <DrinkNameInput
               value={drinkForm.name}
               onChange={v => setDrinkForm(f => ({ ...f, name: v }))}
