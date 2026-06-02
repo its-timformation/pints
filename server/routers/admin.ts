@@ -1,6 +1,5 @@
 import { router, publicProcedure } from "../trpc";
 import { db } from "../db";
-import { scrapeMenuImage } from "../services/menuScraper";
 import { bars, drinks, deals, submissions, barReports, editorsPick, appSettings } from "../../shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
@@ -279,17 +278,11 @@ export const adminRouter = router({
       return results;
     }),
 
-  scrapeMenu: publicProcedure
-    .input(z.object({
-      base64Image: z.string(),
-      mediaType: z.string(),
-    }))
+  deleteAllDrinksForBar: publicProcedure
+    .input(z.object({ barId: z.number() }))
     .mutation(async ({ input }) => {
-      const result = await scrapeMenuImage(input.base64Image, input.mediaType);
-      if (result.error) {
-        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: result.error });
-      }
-      return result.drinks;
+      await db.delete(drinks).where(eq(drinks.barId, input.barId));
+      return { ok: true };
     }),
 
   createDrinksBulk: publicProcedure

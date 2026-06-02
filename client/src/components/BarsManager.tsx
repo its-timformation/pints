@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { ChevronLeft, Trash2, Edit2, ChevronDown, ChevronUp, X, Upload, Search, Plus } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { GroupedList } from "./admin/GroupedList";
@@ -582,41 +582,63 @@ function AreaTypeahead({ value, onChange }: { value: string; onChange: (v: strin
 /* ── BarDetailsEditor ────────────────────────────────────────── */
 function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData: any; onUpdate: () => void }) {
   const { data: barDetails, refetch } = trpc.bars.getById.useQuery({ id: barId });
+  const utils = trpc.useUtils();
   const deleteDrink = trpc.admin.deleteDrink.useMutation({ onSuccess: () => refetch() });
   const deleteDeal = trpc.admin.deleteDeal.useMutation({ onSuccess: () => refetch() });
   const updateBar = trpc.admin.updateBar.useMutation({ onSuccess: () => { refetch(); onUpdate(); } });
   const resolveMap = trpc.admin.resolveMapLink.useMutation();
   const createDrink = trpc.admin.createDrink.useMutation({ onSuccess: () => { refetch(); setAddDrinkOpen(false); setDrinkForm(BLANK_DRINK); } });
-  const scrapeMenu = trpc.admin.scrapeMenu.useMutation();
-  const createBulk = trpc.admin.createDrinksBulk.useMutation({ onSuccess: () => { refetch(); setScrapedDrinks(null); setScrapeStatus('idle'); } });
+  const createBulk = trpc.admin.createDrinksBulk.useMutation();
+  const deleteAllDrinks = trpc.admin.deleteAllDrinksForBar.useMutation();
 
   const BLANK_DRINK = { name: '', size: 'Pint', price: '', currency: 'EUR' };
   const [addDrinkOpen, setAddDrinkOpen] = useState(false);
   const [drinkForm, setDrinkForm] = useState(BLANK_DRINK);
 
-  const [scrapedDrinks, setScrapedDrinks] = useState<any[] | null>(null);
-  const [scrapeStatus, setScrapeStatus] = useState<'idle' | 'reading' | 'review' | 'error'>('idle');
-  const [scrapeMsg, setScrapeMsg] = useState('');
-  const menuInputRef = useRef<HTMLInputElement>(null);
+  const [importRows, setImportRows] = useState<any[] | null>(null);
+  const [importMode, setImportMode] = useState<'add' | 'replace'>('add');
+  const [importWorking, setImportWorking] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
-  const handleMenuImage = useCallback(async (file: File) => {
-    setScrapeStatus('reading');
-    setScrapeMsg('READING MENU...');
+  async function handleCsvFile(file: File) {
+    const text = await file.text();
+    const { parseMenuCsv } = await import('../lib/parseMenuCsv');
+    const { rows, error } = parseMenuCsv(text);
+    if (error) { alert(error); return; }
+    setImportRows(rows);
+    setImportMode('add');
+  }
+
+  async function doImport() {
+    if (!importRows) return;
+    const included = importRows.filter(r => r.include);
+    setImportWorking(true);
     try {
-      const base64 = await new Promise<string>((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res((r.result as string).split(',')[1]);
-        r.onerror = rej;
-        r.readAsDataURL(file);
+      if (importMode === 'replace') {
+        await deleteAllDrinks.mutateAsync({ barId });
+      }
+      await createBulk.mutateAsync({
+        barId,
+        drinks: included.map(r => ({ name: r.name, size: r.size, price: r.price, currency: r.currency })),
       });
-      const result = await scrapeMenu.mutateAsync({ base64Image: base64, mediaType: file.type });
-      setScrapedDrinks(result.map((d: any) => ({ ...d, include: true })));
-      setScrapeStatus('review');
-    } catch (e: any) {
-      setScrapeStatus('error');
-      setScrapeMsg(e.message || 'COULD NOT READ MENU');
+      utils.bars.invalidate();
+      refetch();
+      setImportRows(null);
+    } finally {
+      setImportWorking(false);
     }
-  }, [scrapeMenu]);
+  }
+
+  function downloadTemplate() {
+    const csv = 'name,size,price,currency\nMaxi Bière,70CL,11.50,EUR\nPelforth,25CL,4.00,EUR\nGuinness,50CL,9.00,EUR\n';
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'menu-template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const [editingBar, setEditingBar] = useState(false);
   const [barForm, setBarForm] = useState(barData);
@@ -827,21 +849,19 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
       <div>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-eyebrow opacity-70">DRINKS</h3>
-          <div className="flex items-center">
+          <div className="flex items-center gap-1">
             <button
-              onClick={() => menuInputRef.current?.click()}
-              disabled={scrapeStatus === 'reading'}
-              className="flex items-center gap-1 text-meta text-[var(--color-paper)] opacity-60 hover:opacity-100 min-h-[44px] px-2 disabled:opacity-30"
-              title="Scan a menu photo"
+              onClick={() => csvInputRef.current?.click()}
+              className="flex items-center gap-1 text-meta text-[var(--color-paper)] opacity-60 hover:opacity-100 min-h-[44px] px-2"
             >
-              📷 SCAN
+              ↑ IMPORT CSV
             </button>
             <input
-              ref={menuInputRef}
+              ref={csvInputRef}
               type="file"
-              accept="image/*"
+              accept=".csv,text/csv,.txt"
               className="sr-only"
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleMenuImage(f); e.target.value = ''; }}
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleCsvFile(f); e.target.value = ''; }}
             />
             <button
               onClick={() => { setAddDrinkOpen(!addDrinkOpen); setDrinkForm(BLANK_DRINK); }}
@@ -853,48 +873,73 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
           </div>
         </div>
 
-        {scrapeStatus === 'reading' && (
-          <div className="mb-3 px-3 py-2.5 border border-[var(--color-rule)] text-meta opacity-60 animate-pulse">
-            {scrapeMsg}
-          </div>
-        )}
-
-        {scrapeStatus === 'error' && (
-          <div className="mb-3 px-3 py-2.5 border border-[var(--color-blaze)] text-meta text-[var(--color-blaze)]">
-            {scrapeMsg}
-            <button onClick={() => setScrapeStatus('idle')} className="ml-3 opacity-60 hover:opacity-100">DISMISS</button>
-          </div>
-        )}
-
-        {scrapeStatus === 'review' && scrapedDrinks && (
+        {importRows && (
           <div className="mb-3 border border-[var(--color-rule)] bg-[var(--color-ink-card)] bg-opacity-50">
+            {/* Header */}
             <div className="px-3 py-2 flex items-center justify-between border-b border-[var(--color-rule)]">
-              <div>
-                <span className="text-eyebrow text-[var(--color-blaze)]">MENU SCAN REVIEW</span>
-                <span className="text-meta opacity-40 ml-2">~1–3p per scan</span>
-              </div>
-              <button onClick={() => { setScrapeStatus('idle'); setScrapedDrinks(null); }} className="text-meta opacity-50 hover:opacity-100 min-h-[44px] px-2">DISCARD</button>
+              <span className="text-eyebrow text-[var(--color-blaze)]">CSV IMPORT REVIEW</span>
+              <button onClick={() => setImportRows(null)} className="text-meta opacity-50 hover:opacity-100 min-h-[44px] px-2">CANCEL</button>
             </div>
 
+            {/* Mode toggle */}
+            <div className="px-3 py-2 border-b border-[var(--color-rule)] space-y-1.5">
+              <div className="flex gap-2">
+                {(['add', 'replace'] as const).map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => setImportMode(mode)}
+                    className={`flex-1 py-2 text-meta uppercase border transition-colors ${importMode === mode ? 'border-[var(--color-blaze)] text-[var(--color-blaze)]' : 'border-[var(--color-rule)] opacity-50'}`}
+                  >
+                    {mode === 'add' ? 'ADD TO EXISTING' : 'REPLACE ALL'}
+                  </button>
+                ))}
+              </div>
+              {importMode === 'replace' && (
+                <div className="text-meta text-[var(--color-blaze)] opacity-80">
+                  ⚠ This deletes all current drinks for this bar first.
+                </div>
+              )}
+            </div>
+
+            {/* Format hint */}
+            <div className="px-3 py-2 border-b border-[var(--color-rule)] space-y-1">
+              <div className="text-meta opacity-50 text-xs">
+                CSV COLUMNS: name, size, price, currency · Example: Maxi Bière,70CL,11.50,EUR · Currency optional (defaults to EUR). Header row optional.
+              </div>
+              <button
+                onClick={downloadTemplate}
+                className="text-meta text-xs text-[var(--color-blaze)] opacity-70 hover:opacity-100"
+              >
+                ↓ DOWNLOAD TEMPLATE
+              </button>
+            </div>
+
+            {/* Rows */}
             <div className="max-h-80 overflow-y-auto">
-              {scrapedDrinks.map((d, i) => (
-                <div key={i} className={`flex items-center gap-1.5 px-3 py-1.5 border-b border-[var(--color-rule)] last:border-b-0 ${!d.include ? 'opacity-40' : ''}`}>
+              {importRows.map((d, i) => (
+                <div
+                  key={i}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 border-b border-[var(--color-rule)] last:border-b-0 ${!d.include ? 'opacity-40' : ''}`}
+                >
                   <input
                     type="checkbox"
                     checked={d.include}
-                    onChange={e => setScrapedDrinks(prev => prev!.map((r, j) => j === i ? { ...r, include: e.target.checked } : r))}
+                    onChange={e => setImportRows(prev => prev!.map((r, j) => j === i ? { ...r, include: e.target.checked } : r))}
                     className="w-4 h-4 shrink-0"
                   />
+                  {d.warning && (
+                    <span className="text-[var(--color-blaze)] text-xs shrink-0" title={d.warning}>⚠</span>
+                  )}
                   <input
                     type="text"
                     value={d.name}
-                    onChange={e => setScrapedDrinks(prev => prev!.map((r, j) => j === i ? { ...r, name: e.target.value } : r))}
+                    onChange={e => setImportRows(prev => prev!.map((r, j) => j === i ? { ...r, name: e.target.value } : r))}
                     className="flex-1 min-w-0 bg-transparent border border-[var(--color-rule)] px-2 py-1 text-sm font-display uppercase focus:outline-none focus:border-[var(--color-blaze)]"
                   />
                   <input
                     type="text"
                     value={d.size ?? ''}
-                    onChange={e => setScrapedDrinks(prev => prev!.map((r, j) => j === i ? { ...r, size: e.target.value || null } : r))}
+                    onChange={e => setImportRows(prev => prev!.map((r, j) => j === i ? { ...r, size: e.target.value || null } : r))}
                     placeholder="size"
                     className="w-16 bg-transparent border border-[var(--color-rule)] px-2 py-1 text-sm focus:outline-none focus:border-[var(--color-blaze)]"
                   />
@@ -902,21 +947,22 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
                     type="number"
                     step="0.01"
                     value={d.price}
-                    onChange={e => setScrapedDrinks(prev => prev!.map((r, j) => j === i ? { ...r, price: parseFloat(e.target.value) || 0 } : r))}
+                    onChange={e => setImportRows(prev => prev!.map((r, j) => j === i ? { ...r, price: parseFloat(e.target.value) || 0 } : r))}
                     className="w-16 bg-transparent border border-[var(--color-rule)] px-2 py-1 text-sm focus:outline-none focus:border-[var(--color-blaze)]"
                   />
                   <select
                     value={d.currency}
-                    onChange={e => setScrapedDrinks(prev => prev!.map((r, j) => j === i ? { ...r, currency: e.target.value } : r))}
+                    onChange={e => setImportRows(prev => prev!.map((r, j) => j === i ? { ...r, currency: e.target.value } : r))}
                     className="bg-transparent border border-[var(--color-rule)] px-1 py-1 text-meta text-[var(--color-paper)]"
                   >
                     <option value="EUR" className="bg-[var(--color-ink)]">€</option>
                     <option value="GBP" className="bg-[var(--color-ink)]">£</option>
                     <option value="CHF" className="bg-[var(--color-ink)]">Fr</option>
+                    <option value="USD" className="bg-[var(--color-ink)]">$</option>
                   </select>
                   <button
                     type="button"
-                    onClick={() => setScrapedDrinks(prev => prev!.filter((_, j) => j !== i))}
+                    onClick={() => setImportRows(prev => prev!.filter((_, j) => j !== i))}
                     className="shrink-0 opacity-40 hover:opacity-100 hover:text-[var(--color-blaze)] min-h-[44px] px-1"
                   >
                     <X size={12} />
@@ -925,20 +971,25 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
               ))}
             </div>
 
-            <div className="px-3 py-2 border-t border-[var(--color-rule)]">
+            {/* Summary + import button */}
+            <div className="px-3 py-2 border-t border-[var(--color-rule)] space-y-2">
               {(() => {
-                const toCreate = scrapedDrinks.filter(d => d.include && d.name && d.price > 0);
+                const ready = importRows.filter(r => r.include);
+                const excluded = importRows.length - ready.length;
                 return (
-                  <button
-                    onClick={() => createBulk.mutate({
-                      barId,
-                      drinks: toCreate.map(d => ({ name: d.name, size: d.size, price: d.price, currency: d.currency })),
-                    })}
-                    disabled={createBulk.isPending || toCreate.length === 0}
-                    className="w-full bg-[var(--color-blaze)] text-[var(--color-paper)] py-2.5 font-display uppercase text-sm disabled:opacity-40"
-                  >
-                    {createBulk.isPending ? 'CREATING…' : `CREATE ${toCreate.length} DRINK${toCreate.length !== 1 ? 'S' : ''}`}
-                  </button>
+                  <>
+                    <div className="text-meta opacity-60 text-xs">
+                      {ready.length} DRINK{ready.length !== 1 ? 'S' : ''} READY
+                      {excluded > 0 && ` · ${excluded} EXCLUDED`}
+                    </div>
+                    <button
+                      onClick={doImport}
+                      disabled={importWorking || ready.length === 0}
+                      className="w-full bg-[var(--color-blaze)] text-[var(--color-paper)] py-2.5 font-display uppercase text-sm disabled:opacity-40"
+                    >
+                      {importWorking ? 'IMPORTING…' : `IMPORT ${ready.length} DRINK${ready.length !== 1 ? 'S' : ''}`}
+                    </button>
+                  </>
                 );
               })()}
             </div>
