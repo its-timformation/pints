@@ -1079,6 +1079,7 @@ function DrinkRow({ drink, onDelete, onUpdate }: any) {
       <div className="space-y-2 p-2 bg-[var(--color-ink-soft)] border border-[var(--color-rule)]">
         <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
           className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm" placeholder="Drink name" />
+        <SizeSelect value={form.size || ''} onChange={v => setForm({ ...form, size: v })} />
         <div className="flex gap-2">
           <input type="number" step="0.01" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })}
             className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm" placeholder="Price" />
@@ -1094,7 +1095,7 @@ function DrinkRow({ drink, onDelete, onUpdate }: any) {
           <span className="text-meta opacity-70">VERIFIED</span>
         </label>
         <div className="flex gap-2">
-          <button onClick={() => updateDrink.mutate({ id: drink.id, name: form.name, price: parseFloat(form.price), currency: form.currency, isVerified: form.isVerified })}
+          <button onClick={() => updateDrink.mutate({ id: drink.id, name: form.name, size: form.size || null, price: parseFloat(form.price), currency: form.currency, isVerified: form.isVerified })}
             className="flex-1 bg-[var(--color-verified)] text-[var(--color-ink)] min-h-[44px] font-display uppercase text-sm">SAVE</button>
           <button onClick={() => setEditing(false)} className="flex-1 border border-[var(--color-rule)] min-h-[44px] text-meta uppercase opacity-70">CANCEL</button>
         </div>

@@ -494,7 +494,7 @@ export const adminRouter = router({
       name: z.string(),
       price: z.number(),
       currency: z.string(),
-      size: z.string().optional(),
+      size: z.string().optional().nullable(),
       isVerified: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
