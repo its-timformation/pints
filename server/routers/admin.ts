@@ -438,7 +438,7 @@ export const adminRouter = router({
     .input(z.object({
       barId: z.number(),
       title: z.string(),
-      description: z.string().optional(),
+      description: z.string().nullable().optional(),
       type: z.string(),
       startTime: z.string().optional(),
       endTime: z.string().optional(),

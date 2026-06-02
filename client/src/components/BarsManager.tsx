@@ -590,10 +590,16 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
   const createDrink = trpc.admin.createDrink.useMutation({ onSuccess: () => { refetch(); setAddDrinkOpen(false); setDrinkForm(BLANK_DRINK); } });
   const createBulk = trpc.admin.createDrinksBulk.useMutation();
   const deleteAllDrinks = trpc.admin.deleteAllDrinksForBar.useMutation();
+  const createDeal = trpc.admin.createDeal.useMutation({ onSuccess: () => refetch() });
 
   const BLANK_DRINK = { name: '', size: 'Pint', price: '', currency: 'EUR' };
   const [addDrinkOpen, setAddDrinkOpen] = useState(false);
   const [drinkForm, setDrinkForm] = useState(BLANK_DRINK);
+
+  const BLANK_DEAL = { title: '', type: 'happy_hour', description: '', startTime: '16:00', endTime: '18:00', days: [] as number[] };
+  const [addingDeal, setAddingDeal] = useState(false);
+  const [dealForm, setDealForm] = useState(BLANK_DEAL);
+  const resetDealForm = () => setDealForm(BLANK_DEAL);
 
   const [importRows, setImportRows] = useState<any[] | null>(null);
   const [importMode, setImportMode] = useState<'add' | 'replace'>('add');
@@ -955,10 +961,10 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
                     onChange={e => setImportRows(prev => prev!.map((r, j) => j === i ? { ...r, currency: e.target.value } : r))}
                     className="bg-transparent border border-[var(--color-rule)] px-1 py-1 text-meta text-[var(--color-paper)]"
                   >
-                    <option value="EUR" className="bg-[var(--color-ink)]">€</option>
-                    <option value="GBP" className="bg-[var(--color-ink)]">£</option>
-                    <option value="CHF" className="bg-[var(--color-ink)]">Fr</option>
-                    <option value="USD" className="bg-[var(--color-ink)]">$</option>
+                    <option value="EUR" className="bg-[var(--color-ink)]">EUR €</option>
+                    <option value="GBP" className="bg-[var(--color-ink)]">GBP £</option>
+                    <option value="CHF" className="bg-[var(--color-ink)]">CHF</option>
+                    <option value="USD" className="bg-[var(--color-ink)]">USD $</option>
                   </select>
                   <button
                     type="button"
@@ -1022,8 +1028,8 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
                 onChange={e => setDrinkForm(f => ({ ...f, currency: e.target.value }))}
                 className="bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-2 min-h-[44px] text-sm text-[var(--color-paper)]"
               >
-                <option value="EUR" className="bg-[var(--color-ink)]">EUR</option>
-                <option value="GBP" className="bg-[var(--color-ink)]">GBP</option>
+                <option value="EUR" className="bg-[var(--color-ink)]">EUR €</option>
+                <option value="GBP" className="bg-[var(--color-ink)]">GBP £</option>
                 <option value="CHF" className="bg-[var(--color-ink)]">CHF</option>
               </select>
             </div>
@@ -1056,13 +1062,124 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
       </div>
 
       <div>
-        <h3 className="text-eyebrow opacity-70 mb-2">EVENTS / DEALS</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-eyebrow opacity-70">DEALS & EVENTS</h3>
+          <button
+            onClick={() => { setAddingDeal(true); resetDealForm(); }}
+            className="text-meta text-[var(--color-blaze)] min-h-[44px] px-2"
+          >
+            + ADD DEAL
+          </button>
+        </div>
+
         <div className="space-y-1.5">
           {barDetails.deals?.map(deal => (
             <DealRow key={deal.id} deal={deal} onDelete={() => deleteDeal.mutate({ id: deal.id })} onUpdate={refetch} />
           ))}
-          {barDetails.deals?.length === 0 && <div className="text-meta opacity-55">No deals yet.</div>}
+          {barDetails.deals?.length === 0 && !addingDeal && (
+            <div className="text-meta opacity-55">No deals yet.</div>
+          )}
         </div>
+
+        {addingDeal && (
+          <div className="mt-2 p-3 border border-[var(--color-rule)] space-y-2">
+            <input
+              type="text"
+              placeholder="Deal title (e.g. Happy Hour)"
+              value={dealForm.title}
+              onChange={e => setDealForm({ ...dealForm, title: e.target.value })}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm"
+            />
+            <select
+              value={dealForm.type}
+              onChange={e => setDealForm({ ...dealForm, type: e.target.value })}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm text-[var(--color-paper)]"
+            >
+              <option value="happy_hour" className="bg-[var(--color-ink)]">Happy Hour</option>
+              <option value="event" className="bg-[var(--color-ink)]">Event</option>
+              <option value="promotion" className="bg-[var(--color-ink)]">Promotion</option>
+            </select>
+            <input
+              type="text"
+              placeholder="Description (optional)"
+              value={dealForm.description}
+              onChange={e => setDealForm({ ...dealForm, description: e.target.value })}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm"
+            />
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <div className="text-meta opacity-55 mb-1">START</div>
+                <input
+                  type="time"
+                  value={dealForm.startTime}
+                  onChange={e => setDealForm({ ...dealForm, startTime: e.target.value })}
+                  className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="flex-1">
+                <div className="text-meta opacity-55 mb-1">END</div>
+                <input
+                  type="time"
+                  value={dealForm.endTime}
+                  onChange={e => setDealForm({ ...dealForm, endTime: e.target.value })}
+                  className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <div className="text-meta opacity-55 mb-1">DAYS</div>
+              <div className="flex gap-1 flex-wrap">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      const days = dealForm.days.includes(idx)
+                        ? dealForm.days.filter((d: number) => d !== idx)
+                        : [...dealForm.days, idx];
+                      setDealForm({ ...dealForm, days });
+                    }}
+                    className={`px-2 py-1 text-meta border transition-colors ${
+                      dealForm.days.includes(idx)
+                        ? 'bg-[var(--color-blaze)] text-[var(--color-paper)] border-[var(--color-blaze)]'
+                        : 'border-[var(--color-rule)] opacity-60'
+                    }`}
+                  >
+                    {day.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => { setAddingDeal(false); resetDealForm(); }}
+                className="flex-1 border border-[var(--color-rule)] py-2 text-meta uppercase"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={async () => {
+                  await createDeal.mutateAsync({
+                    barId,
+                    title: dealForm.title,
+                    type: dealForm.type,
+                    description: dealForm.description || null,
+                    startTime: dealForm.startTime,
+                    endTime: dealForm.endTime,
+                    daysOfWeek: JSON.stringify(dealForm.days.length ? dealForm.days : [0, 1, 2, 3, 4, 5, 6]),
+                    isActive: true,
+                  });
+                  setAddingDeal(false);
+                  resetDealForm();
+                }}
+                disabled={createDeal.isPending || !dealForm.title || !dealForm.startTime || !dealForm.endTime}
+                className="flex-1 bg-[var(--color-blaze)] text-[var(--color-paper)] py-2 text-meta uppercase disabled:opacity-40"
+              >
+                {createDeal.isPending ? 'SAVING…' : 'SAVE DEAL'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1085,8 +1202,8 @@ function DrinkRow({ drink, onDelete, onUpdate }: any) {
             className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm" placeholder="Price" />
           <select value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}
             className="bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-2 min-h-[44px] text-sm text-[var(--color-paper)]">
-            <option value="EUR" className="bg-[var(--color-ink)]">EUR</option>
-            <option value="GBP" className="bg-[var(--color-ink)]">GBP</option>
+            <option value="EUR" className="bg-[var(--color-ink)]">EUR €</option>
+            <option value="GBP" className="bg-[var(--color-ink)]">GBP £</option>
             <option value="CHF" className="bg-[var(--color-ink)]">CHF</option>
           </select>
         </div>
