@@ -4,7 +4,7 @@ import { trpc } from "../lib/trpc";
 import { GroupedList } from "./admin/GroupedList";
 import { DrinkNameInput } from "./DrinkNameInput";
 import { SizeSelect } from "./SizeSelect";
-import { detectDrinkType, DRINK_TYPE_LABELS, DRINK_TYPE_ORDER } from "../lib/detectDrinkType";
+import { detectDrinkType, DRINK_TYPE_LABELS, DRINK_TYPE_ORDER, parseSizeValue } from "../lib/detectDrinkType";
 
 interface Props { onBack: () => void; }
 
@@ -1078,7 +1078,11 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
         )}
 
         <div className="space-y-1.5">
-          {[...(barDetails.drinks ?? [])].sort((a, b) => a.name.localeCompare(b.name)).map(drink => (
+          {[...(barDetails.drinks ?? [])].sort((a, b) => {
+            const nameCompare = a.name.localeCompare(b.name);
+            if (nameCompare !== 0) return nameCompare;
+            return parseSizeValue(a.size) - parseSizeValue(b.size);
+          }).map(drink => (
             <DrinkRow key={drink.id} drink={drink} onDelete={() => deleteDrink.mutate({ id: drink.id })} onUpdate={refetch} />
           ))}
           {barDetails.drinks?.length === 0 && <div className="text-meta opacity-55">No drinks yet.</div>}

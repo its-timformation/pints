@@ -61,6 +61,21 @@ export const DRINK_TYPE_LABELS: Record<DrinkType, string> = {
   other: 'OTHER',
 };
 
+export function parseSizeValue(size: string | null): number {
+  if (!size) return 9999;
+  const clMatch = size.match(/^(\d+(?:\.\d+)?)\s*CL$/i);
+  if (clMatch) return parseFloat(clMatch[1]);
+  const lMatch = size.match(/^(\d+(?:\.\d+)?)\s*L$/i);
+  if (lMatch) return parseFloat(lMatch[1]) * 100;
+  const named: Record<string, number> = {
+    'pint': 56.8, 'half': 28.4, 'glass': 20, 'bottle': 33,
+    'can': 33, 'cup': 15, 'mug': 25, 'jug': 200, 'pichet': 200,
+  };
+  const lower = size.toLowerCase();
+  if (lower in named) return named[lower];
+  return 9998;
+}
+
 export const DRINK_TYPE_ORDER: DrinkType[] = [
   'draft_beer', 'bottled_beer', 'canned_beer', 'wine',
   'cocktail', 'shot', 'spirit', 'vin_chaud', 'other',

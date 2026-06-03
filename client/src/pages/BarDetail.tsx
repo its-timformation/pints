@@ -4,7 +4,7 @@ import { ChevronLeft, MapPin, Share2, Flag, ChevronRight, Globe } from "lucide-r
 import { trpc } from "../lib/trpc";
 import { useAppStore, convertPrice, formatPrice, isOpenNow, isVerifiedStale } from "../lib/store";
 import { LoadingMessage } from "../components/LoadingMessage";
-import { detectDrinkType, DRINK_TYPE_LABELS, DRINK_TYPE_ORDER } from "../lib/detectDrinkType";
+import { detectDrinkType, DRINK_TYPE_LABELS, DRINK_TYPE_ORDER, parseSizeValue } from "../lib/detectDrinkType";
 
 const EMPTY_BAR_MESSAGES = [
   "No prices yet — be the first to report one",
@@ -195,7 +195,11 @@ export default function BarDetail() {
             </Link>
           </div>
         ) : (() => {
-          const sortedDrinks = [...bar.drinks].sort((a, b) => a.name.localeCompare(b.name));
+          const sortedDrinks = [...bar.drinks].sort((a, b) => {
+            const nameCompare = a.name.localeCompare(b.name);
+            if (nameCompare !== 0) return nameCompare;
+            return parseSizeValue(a.size) - parseSizeValue(b.size);
+          });
           const grouped = DRINK_TYPE_ORDER.reduce((acc, type) => {
             const typeDrinks = sortedDrinks.filter(d => ((d as any).drinkType || detectDrinkType(d.name)) === type);
             if (typeDrinks.length > 0) acc[type] = typeDrinks;
