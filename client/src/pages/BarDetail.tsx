@@ -179,7 +179,7 @@ export default function BarDetail() {
           </div>
         ) : (
           <ul>
-            {bar.drinks.map((drink, i) => {
+            {[...bar.drinks].sort((a, b) => a.name.localeCompare(b.name)).map((drink, i) => {
               const verified = drink.isVerified;
               const stale = isVerifiedStale(drink.verifiedAt);
               const displayPrice = formatPrice(convertPrice(drink.price, drink.currency as any, currency), currency);

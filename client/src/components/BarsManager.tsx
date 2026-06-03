@@ -1054,7 +1054,7 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
         )}
 
         <div className="space-y-1.5">
-          {barDetails.drinks?.map(drink => (
+          {[...(barDetails.drinks ?? [])].sort((a, b) => a.name.localeCompare(b.name)).map(drink => (
             <DrinkRow key={drink.id} drink={drink} onDelete={() => deleteDrink.mutate({ id: drink.id })} onUpdate={refetch} />
           ))}
           {barDetails.drinks?.length === 0 && <div className="text-meta opacity-55">No drinks yet.</div>}

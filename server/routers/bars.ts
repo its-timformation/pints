@@ -1,7 +1,7 @@
 import { router, publicProcedure } from "../trpc";
 import { db } from "../db";
 import { bars, drinks, deals, submissions, barReports, editorsPick } from "../../shared/schema";
-import { eq, desc, like } from "drizzle-orm";
+import { eq, desc, like, asc } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { rateLimit } from "../rateLimit";
@@ -19,7 +19,7 @@ export const barsRouter = router({
   getAllWithDetails: publicProcedure.query(async () => {
     const [barList, drinkList, dealList] = await Promise.all([
       db.select().from(bars),
-      db.select().from(drinks),
+      db.select().from(drinks).orderBy(asc(drinks.name)),
       db.select().from(deals),
     ]);
     const drinksByBar = new Map<number, typeof drinkList>();
@@ -47,7 +47,7 @@ export const barsRouter = router({
       const barList = await db.select().from(bars).where(eq(bars.id, input.id));
       const bar = barList[0];
       if (!bar) throw new Error("Not found");
-      const barDrinks = await db.select().from(drinks).where(eq(drinks.barId, bar.id));
+      const barDrinks = await db.select().from(drinks).where(eq(drinks.barId, bar.id)).orderBy(asc(drinks.name));
       const barDeals = await db.select().from(deals).where(eq(deals.barId, bar.id));
       return { ...bar, drinks: barDrinks, deals: barDeals };
     }),
