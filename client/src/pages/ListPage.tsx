@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { useAppStore, convertPrice, formatPrice, isOpenNow } from "../lib/store";
@@ -11,15 +11,22 @@ type SortMode = "name" | "price" | "area";
 export default function ListPage() {
   const { currency } = useAppStore();
   const { data: barsWithDetails, isLoading } = trpc.bars.getAllWithDetails.useQuery();
+  const suggestBar = trpc.bars.suggestBar.useMutation();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const sort = (searchParams.get('sort') as SortMode) || 'name';
+  const setSort = (s: SortMode) => setSearchParams(prev => { prev.set('sort', s); return prev; }, { replace: true });
 
   const [openOnly, setOpenOnly] = useState(false);
   const [happyOnly, setHappyOnly] = useState(false);
   const [guinnessOnly, setGuinnessOnly] = useState(false);
   const [areaFilter, setAreaFilter] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortMode>("name");
   const [initialGuinness, setInitialGuinness] = useState(false);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestForm, setSuggestForm] = useState({ name: '', area: '', notes: '', submittedBy: '' });
+  const [suggestDone, setSuggestDone] = useState(false);
 
   useEffect(() => {
     if ((location.state as any)?.guinnessFilter) {
@@ -211,6 +218,83 @@ export default function ListPage() {
           ))}
         </ul>
       )}
+
+      {/* Suggest a bar */}
+      <div className="px-4 py-8 border-t border-[var(--color-rule)] mt-4">
+        <div className="font-display text-lg uppercase mb-1">KNOW A BAR WE'RE MISSING?</div>
+        <div className="text-meta opacity-55 mb-4">
+          Help us build the most complete après index on the mountain.
+        </div>
+        {!suggestOpen ? (
+          <button
+            onClick={() => setSuggestOpen(true)}
+            className="border border-[var(--color-blaze)] text-[var(--color-blaze)] px-5 py-2.5 text-meta hover:bg-[var(--color-blaze)] hover:text-[var(--color-paper)] transition-colors"
+          >
+            SUGGEST A BAR →
+          </button>
+        ) : suggestDone ? (
+          <div className="text-meta text-[var(--color-verified)]">✓ SUGGESTION SENT — THANKS!</div>
+        ) : (
+          <div className="space-y-2 border border-[var(--color-rule)] p-3">
+            <input
+              type="text"
+              placeholder="Bar name *"
+              value={suggestForm.name}
+              onChange={e => setSuggestForm(f => ({ ...f, name: e.target.value }))}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm"
+            />
+            <select
+              value={suggestForm.area}
+              onChange={e => setSuggestForm(f => ({ ...f, area: e.target.value }))}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm text-[var(--color-paper)]"
+            >
+              <option value="" className="bg-[var(--color-ink)]">Area (optional)</option>
+              {["Avoriaz","Morzine","Les Gets","Montriond","Châtel","Morgins","Champéry"].map(a => (
+                <option key={a} value={a} className="bg-[var(--color-ink)]">{a}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Why should it be included? (optional)"
+              value={suggestForm.notes}
+              onChange={e => setSuggestForm(f => ({ ...f, notes: e.target.value }))}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm"
+            />
+            <input
+              type="text"
+              placeholder="Your name (optional)"
+              value={suggestForm.submittedBy}
+              onChange={e => setSuggestForm(f => ({ ...f, submittedBy: e.target.value }))}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm"
+            />
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setSuggestOpen(false)}
+                className="flex-1 border border-[var(--color-rule)] py-2 text-meta uppercase opacity-60"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={async () => {
+                  if (!suggestForm.name.trim()) return;
+                  await suggestBar.mutateAsync({
+                    name: suggestForm.name.trim(),
+                    area: suggestForm.area || undefined,
+                    notes: suggestForm.notes || undefined,
+                    submittedBy: suggestForm.submittedBy || undefined,
+                  });
+                  setSuggestDone(true);
+                  setSuggestOpen(false);
+                }}
+                disabled={!suggestForm.name.trim() || suggestBar.isPending}
+                className="flex-1 bg-[var(--color-blaze)] text-[var(--color-paper)] py-2 text-meta uppercase disabled:opacity-40"
+              >
+                {suggestBar.isPending ? 'SENDING…' : 'SUBMIT'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

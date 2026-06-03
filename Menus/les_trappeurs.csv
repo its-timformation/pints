@@ -1,0 +1,50 @@
+name,size,price,currency
+Expresso,,2.00,EUR
+Grand café,,3.50,EUR
+American Coffee,,3.00,EUR
+Cappucino,,4.00,EUR
+Grand Crème,,4.00,EUR
+Thé,,4.00,EUR
+Chocolat,,4.00,EUR
+Chocolat Viennois,,5.00,EUR
+Vin Chaud,,5.00,EUR
+Chocolat Arrosé,,7.00,EUR
+Coca,33cl,4.00,EUR
+Coca,50cl,6.00,EUR
+Coca Zero,33cl,4.00,EUR
+Coca Zero,50cl,6.00,EUR
+Fanta,33cl,4.00,EUR
+Fanta,50cl,6.00,EUR
+Fuze Tea,33cl,4.00,EUR
+Fuze Tea,50cl,6.00,EUR
+Sprite,33cl,4.00,EUR
+Sprite,50cl,6.00,EUR
+Powerade,33cl,4.00,EUR
+Powerade,50cl,6.00,EUR
+Minute Maid,,4.00,EUR
+Red Bull,,5.00,EUR
+Apérol Spritz,,9.00,EUR
+Sköll,,6.00,EUR
+San Miguel Fresca,,7.00,EUR
+Duvel,,8.00,EUR
+La Chouffe,,8.00,EUR
+Cidre Magner's,,6.00,EUR
+1664 0% alcool,,5.00,EUR
+Carlsberg,25cl,4.00,EUR
+Carlsberg,50cl,8.00,EUR
+Grimbergen,25cl,5.00,EUR
+Grimbergen,50cl,10.00,EUR
+Pietra,25cl,5.00,EUR
+Pietra,50cl,10.00,EUR
+Brooklyn defender IPA,25cl,5.00,EUR
+Brooklyn defender IPA,50cl,10.00,EUR
+Picon Bière,25cl,5.00,EUR
+Picon Bière,50cl,10.00,EUR
+Evian,50cl,4.00,EUR
+Badoit,50cl,4.00,EUR
+Blanc Viognier 'AOP Côteaux du pont du Gard',12cl,6.00,EUR
+Blanc Viognier 'AOP Côteaux du pont du Gard',75cl,28.00,EUR
+Rosé Maríeuge 'AOP Costières de Nîmes',12cl,6.00,EUR
+Rosé Maríeuge 'AOP Costières de Nîmes',75cl,29.00,EUR
+Rouge Jus de Raison 'AOP Costières de Nîmes',12cl,6.00,EUR
+Rouge Jus de Raison 'AOP Costières de Nîmes',75cl,28.00,EUR

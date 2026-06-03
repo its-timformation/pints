@@ -10,7 +10,7 @@ import DealsManager from "../admin/DealsManager";
 import ReportsManager from "../admin/ReportsManager";
 import EditorsPickAdmin from "../admin/EditorsPick";
 
-type Section = "home" | "queue" | "bars" | "drinks" | "deals" | "reports" | "pick";
+type Section = "home" | "queue" | "bars" | "drinks" | "deals" | "reports" | "pick" | "suggestions";
 
 interface Props { onExit: () => void; }
 
@@ -20,10 +20,12 @@ export default function Admin({ onExit }: Props) {
   const { data: bars } = trpc.bars.getAll.useQuery();
   const { data: deals } = trpc.bars.getDeals.useQuery();
   const { data: reports } = trpc.bars.getReports.useQuery();
+  const { data: suggestions } = trpc.bars.getBarSuggestions.useQuery();
 
   const pendingCount = (submissions ?? []).filter(s => s.status === "pending").length;
   const openReports = (reports ?? []).filter(r => r.status === "open").length;
   const activeDeals = (deals ?? []).filter(d => d.isActive).length;
+  const pendingSuggestions = (suggestions ?? []).filter(s => s.status === "pending").length;
 
   if (section === "queue") return <SubmissionsQueue onBack={() => setSection("home")} />;
   if (section === "bars") return <BarsManager onBack={() => setSection("home")} />;
@@ -31,6 +33,27 @@ export default function Admin({ onExit }: Props) {
   if (section === "deals") return <DealsManager onBack={() => setSection("home")} />;
   if (section === "reports") return <ReportsManager onBack={() => setSection("home")} />;
   if (section === "pick") return <EditorsPickAdmin onBack={() => setSection("home")} />;
+  if (section === "suggestions") return (
+    <div className="grain-ink pb-8 max-w-md mx-auto">
+      <div className="px-4 py-3 flex items-center justify-between hairline-b">
+        <button onClick={() => setSection("home")} className="text-meta opacity-70">← ADMIN</button>
+      </div>
+      <section className="px-4 pt-5 pb-3">
+        <h1 className="text-headline">BAR<br/>SUGGESTIONS</h1>
+      </section>
+      <div className="px-4">
+        {(suggestions ?? []).length === 0 && <div className="text-meta opacity-55 py-8">No suggestions yet.</div>}
+        {(suggestions ?? []).map((s: any) => (
+          <div key={s.id} className="border border-[var(--color-rule)] p-3 mb-3">
+            <div className="font-display text-base uppercase">{s.name}</div>
+            {s.area && <div className="text-meta opacity-60">{s.area.toUpperCase()}</div>}
+            {s.notes && <div className="text-meta opacity-80 mt-1">{s.notes}</div>}
+            <div className="text-meta opacity-40 mt-1">{s.submittedBy ? `by ${s.submittedBy} · ` : ''}{s.createdAt?.slice(0,10)}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   if (isLoading) return <LoadingMessage surface="admin" />;
 
@@ -40,6 +63,7 @@ export default function Admin({ onExit }: Props) {
     ["drinks", "DRINKS CATALOGUE", "VERIFY & MANAGE", null, ""],
     ["deals", "DEALS & EVENTS", `${activeDeals} ACTIVE · HAPPY HOURS`, null, ""],
     ["reports", "USER REPORTS", "FLAGGED ISSUES & FEEDBACK", openReports, "sun"],
+    ["suggestions", "BAR SUGGESTIONS", "SUBMITTED BY USERS", pendingSuggestions, "verified"],
     ["pick", "EDITOR'S PICK", "CONFIGURE FEATURED BAR", null, ""],
   ];
 
@@ -69,7 +93,7 @@ export default function Admin({ onExit }: Props) {
       <section className="px-4">
         <div className="hairline-b flex items-baseline justify-between pb-1.5 mb-1">
           <div className="font-display text-lg uppercase">SECTIONS</div>
-          <div className="text-meta opacity-55">06 AREAS</div>
+          <div className="text-meta opacity-55">07 AREAS</div>
         </div>
         <ul>
           {sections.map(([key, label, sub, badge, badgeColor], i) => (

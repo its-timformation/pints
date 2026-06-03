@@ -4,6 +4,20 @@ import { ChevronLeft, MapPin, Share2, Flag, ChevronRight, Globe } from "lucide-r
 import { trpc } from "../lib/trpc";
 import { useAppStore, convertPrice, formatPrice, isOpenNow, isVerifiedStale } from "../lib/store";
 import { LoadingMessage } from "../components/LoadingMessage";
+import { detectDrinkType, DRINK_TYPE_LABELS, DRINK_TYPE_ORDER } from "../lib/detectDrinkType";
+
+const EMPTY_BAR_MESSAGES = [
+  "No prices yet — be the first to report one",
+  "Menu's a mystery. Be the scout",
+  "Uncharted territory. Slide in and report back",
+  "The editor has no intel on this one yet",
+  "This bar hasn't been dispatched yet",
+  "No field reports on this one. First round's yours",
+  "Menu unknown. Someone has to go first",
+  "Off the index for now. Help us fix that",
+  "The pints are there. The prices aren't. Yet",
+  "Dark horse. No prices on record",
+];
 
 export default function BarDetail() {
   const { id } = useParams();
@@ -165,49 +179,74 @@ export default function BarDetail() {
       )}
 
       {/* Drinks list */}
-      <section className="px-5 pt-4 pb-3">
-        <div className="hairline-b flex items-baseline justify-between pb-1.5 mb-1">
+      <section className="pt-4 pb-3">
+        <div className="hairline-b flex items-baseline justify-between pb-1.5 mb-1 px-5">
           <div className="font-display text-lg uppercase">DRINKS LIST</div>
           <div className="text-meta opacity-55">{bar.drinks.length.toString().padStart(2,"0")} ENTRIES</div>
         </div>
         {bar.drinks.length === 0 ? (
-          <div className="py-8 text-center">
-            <div className="text-meta opacity-60 mb-3">NO PRICES YET</div>
-            <Link to={`/submit/${bar.id}`} className="inline-block bg-[var(--color-blaze)] text-[var(--color-paper)] px-4 py-2.5 text-meta uppercase">
-              BE THE FIRST TO ADD ONE →
+          <div className="px-5 py-10 text-center">
+            <div className="font-display text-xl uppercase text-[var(--color-paper)] mb-3">NO PRICES ON RECORD</div>
+            <div className="text-meta opacity-55 mb-6">
+              {EMPTY_BAR_MESSAGES[bar.id % EMPTY_BAR_MESSAGES.length]}
+            </div>
+            <Link to={`/submit/${bar.id}`} className="inline-block border border-[var(--color-blaze)] text-[var(--color-blaze)] px-5 py-2.5 text-meta uppercase">
+              REPORT A PRICE →
             </Link>
           </div>
-        ) : (
-          <ul>
-            {[...bar.drinks].sort((a, b) => a.name.localeCompare(b.name)).map((drink, i) => {
-              const verified = drink.isVerified;
-              const stale = isVerifiedStale(drink.verifiedAt);
-              const displayPrice = formatPrice(convertPrice(drink.price, drink.currency as any, currency), currency);
-              return (
-                <li key={drink.id} className="hairline-b-soft last:border-b-0 py-4 flex items-center gap-3">
-                  <span className="num-rail text-[var(--color-blaze)] w-6 shrink-0">{String(i+1).padStart(2,"0")}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-display text-base uppercase text-[var(--color-paper)] truncate">{drink.name}</div>
-                    <div className="text-meta opacity-60 mt-0.5 flex items-center gap-2 flex-wrap">
-                      {drink.size && <span>{drink.size.toUpperCase()}</span>}
-                      {verified && !stale && <span className="verified-pill">VERIFIED</span>}
-                      {verified && stale && <span className="stale-pill">VERIFIED · STALE</span>}
-                      {!verified && <span className="opacity-55">UNVERIFIED</span>}
-                    </div>
+        ) : (() => {
+          const sortedDrinks = [...bar.drinks].sort((a, b) => a.name.localeCompare(b.name));
+          const grouped = DRINK_TYPE_ORDER.reduce((acc, type) => {
+            const typeDrinks = sortedDrinks.filter(d => ((d as any).drinkType || detectDrinkType(d.name)) === type);
+            if (typeDrinks.length > 0) acc[type] = typeDrinks;
+            return acc;
+          }, {} as Record<string, typeof sortedDrinks>);
+          let globalIdx = 0;
+          return (
+            <div>
+              {Object.entries(grouped).map(([type, typeDrinks]) => (
+                <div key={type}>
+                  <div className="sticky top-0 z-10 bg-[var(--color-ink)] border-l-2 border-[var(--color-blaze)] px-5 py-2 flex items-center justify-between">
+                    <span className="font-display text-sm uppercase text-[var(--color-blaze)]">
+                      {DRINK_TYPE_LABELS[type as keyof typeof DRINK_TYPE_LABELS]}
+                    </span>
+                    <span className="text-meta opacity-50">{typeDrinks.length.toString().padStart(2,'0')}</span>
                   </div>
-                  <div className="font-display text-lg text-[var(--color-sun)]">{displayPrice}</div>
-                  <Link
-                    to={`/submit/${bar.id}?drink=${encodeURIComponent(drink.name)}&size=${encodeURIComponent(drink.size ?? "")}&update=1`}
-                    className="shrink-0 border border-[var(--color-rule)] text-meta uppercase px-3 py-2 min-h-[44px] hover:border-[var(--color-blaze)] transition-colors"
-                    aria-label={`Suggest update for ${drink.name}`}
-                  >
-                    UPDATE PRICE
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                  <ul>
+                    {typeDrinks.map(drink => {
+                      const i = globalIdx++;
+                      const verified = drink.isVerified;
+                      const stale = isVerifiedStale(drink.verifiedAt);
+                      const displayPrice = formatPrice(convertPrice(drink.price, drink.currency as any, currency), currency);
+                      return (
+                        <li key={drink.id} className="hairline-b-soft last:border-b-0 py-4 px-5 flex items-center gap-3">
+                          <span className="num-rail text-[var(--color-blaze)] w-6 shrink-0">{String(i+1).padStart(2,"0")}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-display text-base uppercase text-[var(--color-paper)] truncate">{drink.name}</div>
+                            <div className="text-meta opacity-60 mt-0.5 flex items-center gap-2 flex-wrap">
+                              {drink.size && <span>{drink.size.toUpperCase()}</span>}
+                              {verified && !stale && <span className="verified-pill">VERIFIED</span>}
+                              {verified && stale && <span className="stale-pill">VERIFIED · STALE</span>}
+                              {!verified && <span className="opacity-55">UNVERIFIED</span>}
+                            </div>
+                          </div>
+                          <div className="font-display text-lg text-[var(--color-sun)]">{displayPrice}</div>
+                          <Link
+                            to={`/submit/${bar.id}?drink=${encodeURIComponent(drink.name)}&size=${encodeURIComponent(drink.size ?? "")}&update=1`}
+                            className="shrink-0 border border-[var(--color-rule)] text-meta uppercase px-3 py-2 min-h-[44px] hover:border-[var(--color-blaze)] transition-colors"
+                            aria-label={`Suggest update for ${drink.name}`}
+                          >
+                            UPDATE PRICE
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </section>
 
       {/* Add a new drink CTA */}

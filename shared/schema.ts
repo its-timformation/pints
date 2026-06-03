@@ -27,6 +27,7 @@ export const drinks = sqliteTable("drinks", {
   size: text("size"), // "Pint", "50cl", "25cl", "Shot"
   price: real("price").notNull(),
   currency: text("currency").default("EUR").notNull(),
+  drinkType: text("drink_type"), // draft_beer | bottled_beer | canned_beer | wine | cocktail | shot | spirit | vin_chaud | other
   isVerified: integer("is_verified", { mode: "boolean" }).default(false).notNull(),
   verifiedAt: text("verified_at"), // ISO; used to age verification after 60 days
   lastUpdated: text("last_updated").default(sql`CURRENT_TIMESTAMP`).notNull(),
@@ -97,6 +98,16 @@ export const appSettings = sqliteTable("app_settings", {
   value: text("value"),
 });
 
+export const barSuggestions = sqliteTable("bar_suggestions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  area: text("area"),
+  notes: text("notes"),
+  submittedBy: text("submitted_by"),
+  createdAt: text("created_at").notNull(),
+  status: text("status").default("pending"),
+});
+
 // Infer types
 export type Bar = typeof bars.$inferSelect;
 export type InsertBar = typeof bars.$inferInsert;
@@ -118,3 +129,6 @@ export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
 
 export type EditorsPick = typeof editorsPick.$inferSelect;
 export type InsertEditorsPick = typeof editorsPick.$inferInsert;
+
+export type BarSuggestion = typeof barSuggestions.$inferSelect;
+export type InsertBarSuggestion = typeof barSuggestions.$inferInsert;

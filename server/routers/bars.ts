@@ -1,6 +1,6 @@
 import { router, publicProcedure } from "../trpc";
 import { db } from "../db";
-import { bars, drinks, deals, submissions, barReports, editorsPick } from "../../shared/schema";
+import { bars, drinks, deals, submissions, barReports, editorsPick, barSuggestions } from "../../shared/schema";
 import { eq, desc, like, asc } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -136,6 +136,26 @@ export const barsRouter = router({
 
   getReports: publicProcedure.query(async () => {
     return db.select().from(barReports).orderBy(desc(barReports.createdAt));
+  }),
+
+  suggestBar: publicProcedure
+    .input(z.object({
+      name: z.string().min(1).max(100),
+      area: z.string().optional(),
+      notes: z.string().max(500).optional(),
+      submittedBy: z.string().max(100).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      await db.insert(barSuggestions).values({
+        ...input,
+        createdAt: new Date().toISOString(),
+        status: 'pending',
+      });
+      return { ok: true };
+    }),
+
+  getBarSuggestions: publicProcedure.query(async () => {
+    return db.select().from(barSuggestions).orderBy(desc(barSuggestions.createdAt));
   }),
 
   getEditorsPick: publicProcedure.query(async () => {

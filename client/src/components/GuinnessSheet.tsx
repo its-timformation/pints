@@ -1,10 +1,8 @@
-import { useEffect, useMemo, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ChevronRight, X } from "lucide-react";
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { trpc } from "../lib/trpc";
-import { useAppStore, convertPrice, formatPrice, isOpenNow, distanceKm } from "../lib/store";
-import { LoadingMessage } from "./LoadingMessage";
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { trpc } from '../lib/trpc';
+import { useAppStore, formatPrice, convertPrice, isOpenNow } from '../lib/store';
 
 interface Props {
   open: boolean;
@@ -12,178 +10,181 @@ interface Props {
   userLocation?: { lat: number; lng: number } | null;
 }
 
-export function GuinnessSheet({ open, onClose, userLocation }: Props) {
-  const navigate = useNavigate();
+const SNAP_PARTIAL = 0.45;
+const SNAP_FULL = 0.88;
+const DISMISS_THRESHOLD = 0.25;
+
+export function GuinnessSheet({ open, onClose }: Props) {
   const { currency } = useAppStore();
-  const { data: allBars, isLoading } = trpc.bars.getAllWithDetails.useQuery(undefined, { enabled: open });
+  const { data: barsWithDetails } = trpc.bars.getAllWithDetails.useQuery(undefined, { enabled: open });
 
-  const y = useMotionValue(0);
+  const [snapHeight, setSnapHeight] = useState(SNAP_PARTIAL);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragY, setDragY] = useState(0);
+
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const startYRef = useRef(0);
+  const startHeightRef = useRef(0);
   const listRef = useRef<HTMLDivElement>(null);
-  const SNAP_POINTS = [0, window.innerHeight * 0.35, window.innerHeight * 0.65];
-  const DEFAULT_SNAP = window.innerHeight * 0.35;
 
-  const backdropOpacity = useTransform(y, [0, window.innerHeight * 0.65], [0.7, 0]);
+  useEffect(() => {
+    if (open) setSnapHeight(SNAP_PARTIAL);
+  }, [open]);
 
-  // Animate in on open
+  // Scroll lock while open
   useEffect(() => {
     if (open) {
-      y.set(window.innerHeight);
-      animate(y, DEFAULT_SNAP, { type: "spring", stiffness: 400, damping: 40 });
-    }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Scroll lock
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-      return () => { document.body.style.overflow = ""; };
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
     }
   }, [open]);
 
-  // Escape key
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  const vh = window.innerHeight;
 
-  const handleClose = () => {
-    animate(y, window.innerHeight, { type: "spring", stiffness: 300, damping: 30 });
-    setTimeout(onClose, 350);
-  };
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (listRef.current && listRef.current.scrollTop > 5) return;
+    setIsDragging(true);
+    startYRef.current = e.clientY;
+    startHeightRef.current = snapHeight * vh;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }, [snapHeight, vh]);
 
-  const onDragEnd = (_: any, info: any) => {
-    const velocity = info.velocity.y;
-    const current = y.get();
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging) return;
+    const delta = startYRef.current - e.clientY;
+    const newH = Math.max(80, Math.min(vh * 0.95, startHeightRef.current + delta));
+    setDragY(newH);
+  }, [isDragging, vh]);
 
-    if (velocity > 500) {
-      animate(y, window.innerHeight, { type: "spring", stiffness: 300, damping: 30 });
-      setTimeout(onClose, 300);
-      return;
-    }
-    if (velocity < -500) {
-      animate(y, 0, { type: "spring", stiffness: 400, damping: 40 });
-      return;
-    }
-    const nearest = SNAP_POINTS.reduce((a, b) =>
-      Math.abs(b - current) < Math.abs(a - current) ? b : a
-    );
-    if (nearest >= window.innerHeight * 0.65) {
-      animate(y, window.innerHeight, { type: "spring", stiffness: 300, damping: 30 });
-      setTimeout(onClose, 300);
+  const handlePointerUp = useCallback((_e: React.PointerEvent) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    const h = dragY || snapHeight * vh;
+    const ratio = h / vh;
+    if (ratio < DISMISS_THRESHOLD) {
+      onClose();
+    } else if (ratio < (SNAP_PARTIAL + SNAP_FULL) / 2) {
+      setSnapHeight(SNAP_PARTIAL);
     } else {
-      animate(y, nearest, { type: "spring", stiffness: 400, damping: 40 });
+      setSnapHeight(SNAP_FULL);
     }
-  };
+    setDragY(0);
+  }, [isDragging, dragY, snapHeight, vh, onClose]);
 
-  const nearbyGuinnessBars = useMemo(() => {
-    if (!allBars) return [];
-    const guinnessBars = allBars.filter(b => b.servesGuinness);
-    const center = userLocation || { lat: 46.1893, lng: 6.7741 };
-    return guinnessBars
-      .map(b => {
-        const g = (b.drinks ?? []).find(d => d.name.toLowerCase().includes("guinness"));
-        return {
-          ...b,
-          distance: distanceKm(center, { lat: b.lat, lng: b.lng }),
-          guinnessPrice: g ? { price: g.price, currency: g.currency } : null,
-        };
-      })
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, 8);
-  }, [allBars, userLocation]);
+  const guinnessItems = (barsWithDetails ?? [])
+    .filter(b => b.servesGuinness)
+    .map(b => {
+      const drinks = (b.drinks ?? []).filter((d: any) =>
+        /guinness|stout/i.test(d.name)
+      );
+      const cheapest = drinks.length
+        ? drinks.reduce((min: any, d: any) => {
+            const p = convertPrice(d.price, d.currency, currency);
+            return p < min.price ? { price: p, drink: d } : min;
+          }, { price: Infinity, drink: drinks[0] })
+        : null;
+      return { bar: b, cheapest };
+    })
+    .filter(item => item.cheapest && item.cheapest.price !== Infinity)
+    .sort((a, b) => (a.cheapest?.price ?? 999) - (b.cheapest?.price ?? 999));
 
   if (!open) return null;
 
+  const sheetHeight = isDragging ? dragY : snapHeight * vh;
+
   return (
-    <div className="fixed inset-0 z-[90]" role="dialog" aria-label="Nearest Guinness">
+    <div className="fixed inset-0 z-[90]">
       {/* Backdrop */}
-      <motion.div
+      <div
         className="absolute inset-0 bg-black"
-        style={{ opacity: backdropOpacity }}
-        onClick={handleClose}
+        style={{ opacity: 0.5 }}
+        onClick={onClose}
       />
 
       {/* Sheet */}
-      <motion.div
-        className="absolute bottom-0 left-0 right-0 bg-[var(--color-paper)] text-[var(--color-ink)] rounded-t-2xl flex flex-col overflow-hidden"
-        style={{ y, height: "100vh", touchAction: "none" }}
-        drag="y"
-        dragConstraints={{ top: 0, bottom: window.innerHeight }}
-        dragElastic={0.1}
-        dragDirectionLock={true}
-        onDragEnd={onDragEnd}
+      <div
+        ref={sheetRef}
+        className="absolute bottom-0 left-0 right-0 bg-[var(--color-paper)] text-[var(--color-ink)] rounded-t-2xl flex flex-col"
+        style={{
+          height: sheetHeight,
+          transition: isDragging ? 'none' : 'height 0.3s cubic-bezier(0.32,0.72,0,1)',
+          willChange: 'height',
+          touchAction: 'none',
+        }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
       >
         {/* Drag handle */}
-        <div
-          className="shrink-0 flex flex-col items-center justify-center cursor-grab select-none"
-          style={{ height: 44 }}
-          aria-label="Drag to resize or dismiss"
-        >
-          <div className="w-12 rounded-full bg-[var(--color-ink)] opacity-30" style={{ height: 5 }} />
+        <div className="shrink-0 flex justify-center pt-3 pb-1 cursor-grab select-none">
+          <div className="w-12 h-1 rounded-full bg-[var(--color-ink)] opacity-20" />
         </div>
 
         {/* Header */}
         <div className="px-5 pb-3 flex items-start justify-between gap-4 shrink-0">
           <div>
-            <div className="text-eyebrow opacity-60">PERFECT TIME FOR A GUINNESS</div>
-            <h2 className="text-headline mt-2">WORTH THE<br/>WALK</h2>
+            <div className="text-eyebrow opacity-60 mb-1">PERFECT TIME FOR A GUINNESS</div>
+            <h2 className="text-headline">WORTH THE<br/>WALK</h2>
           </div>
-          <button onClick={handleClose} className="p-2 -mr-2" aria-label="Close">
-            <X size={20} strokeWidth={1.6} />
+          <button
+            onClick={onClose}
+            className="mt-1 p-1.5 opacity-50 hover:opacity-100 !min-h-0 shrink-0"
+            onPointerDown={e => e.stopPropagation()}
+          >
+            <X size={18} strokeWidth={1.6} />
           </button>
         </div>
 
-        {/* Bar list */}
+        {/* Scrollable list */}
         <div
           ref={listRef}
-          className="flex-1 overflow-y-auto pb-safe"
-          onPointerDown={(e) => {
-            if (listRef.current && listRef.current.scrollTop <= 0) {
-              e.currentTarget.style.overflowY = 'hidden';
+          className="flex-1 overflow-y-auto"
+          style={{ overscrollBehavior: 'contain' }}
+          onPointerDown={e => {
+            if (listRef.current && listRef.current.scrollTop > 5) {
+              e.stopPropagation();
             }
           }}
-          onPointerUp={() => {
-            if (listRef.current) listRef.current.style.overflowY = 'auto';
-          }}
-          onPointerCancel={() => {
-            if (listRef.current) listRef.current.style.overflowY = 'auto';
-          }}
         >
-          {isLoading ? (
-            <LoadingMessage surface="guinness" className="!text-[var(--color-ink)]" />
-          ) : nearbyGuinnessBars.length === 0 ? (
+          {guinnessItems.length === 0 ? (
             <div className="px-5 py-12 text-center">
               <div className="font-display text-xl uppercase">NO STOUT IN SIGHT</div>
-              <div className="text-meta opacity-60 mt-3">No Guinness pourers found in your area yet.</div>
+              <div className="text-meta opacity-60 mt-3">No Guinness pourers found yet.</div>
             </div>
           ) : (
-            <ul>
-              {nearbyGuinnessBars.map((bar, i) => {
-                const priceInfo = bar.guinnessPrice;
+            <ul className="pb-4">
+              {guinnessItems.map(({ bar, cheapest }, i) => {
                 const openState = isOpenNow(bar.openingHours);
                 return (
                   <li key={bar.id}>
                     <Link
                       to={`/bar/${bar.id}`}
-                      onClick={handleClose}
-                      className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--color-rule-paper)] last:border-b-0"
+                      className="hairline-b-soft flex items-center gap-3 px-5 py-3.5"
+                      onClick={onClose}
+                      onPointerDown={e => e.stopPropagation()}
                     >
-                      <span className="num-rail text-[var(--color-blaze)] w-6 shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                      <span className="num-rail text-[var(--color-blaze)] w-6 shrink-0 text-sm">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
                       <div className="flex-1 min-w-0">
-                        <div className="font-display text-base uppercase truncate">{bar.name}</div>
-                        <div className="text-meta opacity-60 mt-0.5 flex items-center gap-1.5">
-                          <span className={`inline-block w-1.5 h-1.5 rounded-full ${openState.open ? "bg-[var(--color-verified)]" : "bg-[var(--color-ink)] opacity-35"}`} />
-                          {openState.open ? `OPEN UNTIL ${openState.closesAt}` : `OPENS ${openState.opensAt ?? "—"}`} · {bar.distance.toFixed(1)} KM · {bar.area}
+                        <div className="font-display text-base uppercase truncate">
+                          {bar.name}
+                        </div>
+                        <div className="text-meta opacity-55 mt-0.5 flex items-center gap-1.5">
+                          <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
+                            openState.open ? 'bg-[var(--color-verified)]' : 'bg-[var(--color-ink)] opacity-30'
+                          }`} />
+                          {openState.open ? `OPEN UNTIL ${openState.closesAt}` : 'CLOSED'}
+                          {' · '}
+                          {bar.area?.toUpperCase()}
                         </div>
                       </div>
-                      {priceInfo && (
-                        <div className="font-display text-lg shrink-0">
-                          {formatPrice(convertPrice(priceInfo.price, priceInfo.currency as any, currency), currency)}
+                      {cheapest && (
+                        <div className="font-display text-lg text-[var(--color-blaze)] shrink-0">
+                          {formatPrice(cheapest.price, currency)}
                         </div>
                       )}
-                      <ChevronRight size={14} strokeWidth={1.4} className="opacity-50 shrink-0" />
                     </Link>
                   </li>
                 );
@@ -193,15 +194,18 @@ export function GuinnessSheet({ open, onClose, userLocation }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="shrink-0">
-          <button
-            onClick={() => { handleClose(); setTimeout(() => navigate("/list", { state: { guinnessFilter: true } }), 360); }}
-            className="w-full bg-[var(--color-ink)] text-[var(--color-paper)] py-4 font-display uppercase min-h-[44px]"
+        <div className="shrink-0 hairline-t">
+          <Link
+            to="/list"
+            state={{ guinnessFilter: true }}
+            onClick={onClose}
+            className="flex items-center justify-center gap-2 py-4 text-meta opacity-60 hover:opacity-100"
+            onPointerDown={e => e.stopPropagation()}
           >
             VIEW ALL GUINNESS BARS →
-          </button>
+          </Link>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

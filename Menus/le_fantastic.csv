@@ -1,0 +1,158 @@
+name,size,price,currency
+Heineken,25CL,4.40,EUR
+Heineken,50CL,8.60,EUR
+Panaché,25CL,4.40,EUR
+Panaché,50CL,8.60,EUR
+Affligem Blanche,25CL,4.80,EUR
+Affligem Blanche,50CL,9.50,EUR
+Lagunitas IPA,25CL,5.00,EUR
+Lagunitas IPA,50CL,9.80,EUR
+Picon,25CL,5.10,EUR
+Picon,50CL,9.90,EUR
+Cervoise,25CL,5.10,EUR
+Cervoise,50CL,9.90,EUR
+Leffe,33CL,7.00,EUR
+Pelforth Brune,33CL,7.00,EUR
+Desperados,33CL,7.00,EUR
+Bud,33CL,7.00,EUR
+Duvel,33CL,8.00,EUR
+Chouffe,33CL,8.00,EUR
+Mort Subite Kriek,25CL,6.50,EUR
+Magner's Cider,56.8CL,9.50,EUR
+Guinness,50CL,9.00,EUR
+Corona,35.5CL,7.00,EUR
+Heineken 0%,33CL,7.00,EUR
+Tropical Smoothie IPA,33CL,8.00,EUR
+NEIPA,33CL,8.00,EUR
+Loulou Charmeuse AOP Luberon,12CL,4.50,EUR
+Coupe de Champagne,12CL,11.50,EUR
+Crémant d'Alsace AOP,12CL,8.50,EUR
+Chardonnay AOP Savoie,12CL,5.50,EUR
+Roussette AOP Savoie,12CL,5.50,EUR
+Les Fleurelles AOP Alsace,12CL,5.50,EUR
+Sauvignon VDF Loire,12CL,5.40,EUR
+Tariquet IGP Gascogne Moelleux,12CL,5.50,EUR
+Beau Rivage de By Bordeaux,12CL,5.50,EUR
+Côtes du Rhône,12CL,5.50,EUR
+Pinot Noir Bourgogne,12CL,5.40,EUR
+Gamay Savoie,12CL,5.50,EUR
+Pays d'Oc,12CL,5.40,EUR
+Ricard,4CL,4.20,EUR
+Pontarlier,4CL,4.20,EUR
+Kir Cassis,,4.50,EUR
+Kir Framboise,,4.50,EUR
+Kir Pêche,,4.50,EUR
+Kir Châtaigne,,4.50,EUR
+Kirs Pétillant,,4.80,EUR
+Kirs Royal,,11.50,EUR
+Campari,5CL,5.80,EUR
+Suze,5CL,5.80,EUR
+Martini,5CL,5.80,EUR
+Porto,5CL,5.80,EUR
+Sangria Maison,,5.50,EUR
+Americano,,10.00,EUR
+Negroni,,10.00,EUR
+Apérol Spritz,,10.00,EUR
+Limoncello Spritz,,10.00,EUR
+St Germain Spritz,,11.00,EUR
+Italicus Spritz,,11.00,EUR
+La Fée des Monts de Morzine,,11.00,EUR
+La Coupe,12CL,11.50,EUR
+Deutz Classic,75CL,70.00,EUR
+Deutz Classic,150CL,135.00,EUR
+Veuve Clicquot,75CL,80.00,EUR
+Veuve Clicquot,150CL,155.00,EUR
+Dom Perignon,75CL,320.00,EUR
+Jus de Fruits,25CL,4.40,EUR
+Fruits Pressés Orange,,5.50,EUR
+Fruits Pressés Citron,,5.50,EUR
+Sodas,25CL,4.60,EUR
+Sodas,33CL,4.60,EUR
+Diabolo ou Sirop,33CL,4.50,EUR
+Badoit,33CL,4.10,EUR
+Badoit,50CL,5.10,EUR
+Evian,33CL,4.10,EUR
+Evian,50CL,5.10,EUR
+Bolée de Cidre,25CL,4.50,EUR
+Red Bull,25CL,5.20,EUR
+Rhum,,7.00,EUR
+Gin,,7.00,EUR
+Tequila,,7.00,EUR
+Whisky,,7.00,EUR
+Vodka,,7.00,EUR
+Alcool + Soda,25CL,9.00,EUR
+Alcool + Energy Drink,25CL,10.00,EUR
+Alcool + Red Bull,25CL,12.00,EUR
+Cognac VSOP,4CL,10.00,EUR
+Cognac XO,4CL,16.00,EUR
+Cognac,4CL,8.00,EUR
+Armagnac,4CL,8.00,EUR
+Calvados,4CL,8.00,EUR
+Bailey's,4CL,8.00,EUR
+Amaretto,4CL,8.00,EUR
+Genepi,4CL,8.00,EUR
+Get 27,4CL,8.00,EUR
+Limoncello,4CL,8.00,EUR
+Eau de Vie Poire,4CL,9.00,EUR
+Eau de Vie Framboise,4CL,9.00,EUR
+Cardhu,5CL,13.00,EUR
+Ardberg,5CL,13.00,EUR
+Glenmorangie,5CL,13.00,EUR
+Jack Daniel's N.7,5CL,9.00,EUR
+Jack Daniel's Fire,5CL,9.00,EUR
+Bourbon Bullet,5CL,10.00,EUR
+Zacapa,5CL,12.00,EUR
+Bumbu,5CL,12.00,EUR
+Eminente,5CL,12.00,EUR
+Reposado Don Julio,5CL,13.00,EUR
+Hendrick's,5CL,12.00,EUR
+Sévilla,5CL,12.00,EUR
+Fée des Monts de Morzine,5CL,12.00,EUR
+Malfy Rosa,5CL,12.00,EUR
+Bombay Saphire,5CL,12.00,EUR
+Malfy Limone,5CL,12.00,EUR
+Mojitos Classic,,11.00,EUR
+Mojitos Royal,,12.50,EUR
+"Classiques (Tequila sunrise, Gin Fizz, Planteur, Cuba Libre, Expresso Martini, Bloody Mary, Pina colada, Sex on the beach, Daiquiri, Margarita, Cosmopolitan)",,11.00,EUR
+Moscow Mule,,11.00,EUR
+London Mule,,11.00,EUR
+Jamaican Mule,,11.00,EUR
+Genepi Mule,,11.00,EUR
+Fire Mule,,11.00,EUR
+Porn Star Martini,,11.00,EUR
+Paloma Reposado,,12.00,EUR
+Madeleine,,11.00,EUR
+Love Potion,,11.00,EUR
+Maï Taï,,11.50,EUR
+Long Island Ice Tea,,14.00,EUR
+Fantastic Sour,,12.50,EUR
+Alpin Martini,,12.50,EUR
+Apple Fire,,12.00,EUR
+Red Ginger,,8.50,EUR
+"Les Virgin (Mojito, Pina Colada, Bloody Mary)",,8.50,EUR
+Fruit Punch,,8.50,EUR
+Gin 0%,,8.50,EUR
+Expresso,,2.10,EUR
+Grand Café,,4.20,EUR
+Double Expresso,,4.20,EUR
+Petit Crème,,2.40,EUR
+Grand Crème,,4.50,EUR
+Latte,,4.50,EUR
+Café Arrosé,,6.20,EUR
+Cappuccino,,4.90,EUR
+Café Viennois,,5.00,EUR
+Thés Noirs,,3.30,EUR
+Thés Verts,,3.30,EUR
+Thé Rhum,,6.00,EUR
+Infusions Classiques,,3.30,EUR
+Infusions Inventives,,3.30,EUR
+Chocolat Chaud,,4.50,EUR
+Chocolat Viennois,,5.50,EUR
+Chocolat Alcool,,7.50,EUR
+Chocolat des Îles,,8.50,EUR
+Citron Chaud avec Miel,,5.00,EUR
+Lait Chaud Nature,,3.20,EUR
+Lait Chaud Miel Cannelle,,4.10,EUR
+Grog,,7.50,EUR
+Vin Chaud,,4.80,EUR
+Irish Coffee,,9.50,EUR

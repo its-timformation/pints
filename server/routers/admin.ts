@@ -293,6 +293,7 @@ export const adminRouter = router({
         size: z.string().nullable(),
         price: z.number(),
         currency: z.string(),
+        drinkType: z.string().optional().nullable(),
       })),
     }))
     .mutation(async ({ input }) => {
@@ -425,6 +426,7 @@ export const adminRouter = router({
       size: z.string().optional(),
       price: z.number(),
       currency: z.string().default("EUR"),
+      drinkType: z.string().optional().nullable(),
       isVerified: z.boolean().default(true),
     }))
     .mutation(async ({ input }) => {
@@ -495,6 +497,7 @@ export const adminRouter = router({
       price: z.number(),
       currency: z.string(),
       size: z.string().optional().nullable(),
+      drinkType: z.string().optional().nullable(),
       isVerified: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
@@ -530,6 +533,8 @@ export const adminRouter = router({
       type: z.string(),
       startTime: z.string().optional().nullable(),
       endTime: z.string().optional().nullable(),
+      daysOfWeek: z.string().optional().nullable(),
+      isActive: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
       const { id, ...data } = input;

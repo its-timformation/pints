@@ -4,6 +4,7 @@ import { trpc } from "../lib/trpc";
 import { GroupedList } from "./admin/GroupedList";
 import { DrinkNameInput } from "./DrinkNameInput";
 import { SizeSelect } from "./SizeSelect";
+import { detectDrinkType, DRINK_TYPE_LABELS, DRINK_TYPE_ORDER } from "../lib/detectDrinkType";
 
 interface Props { onBack: () => void; }
 
@@ -592,7 +593,7 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
   const deleteAllDrinks = trpc.admin.deleteAllDrinksForBar.useMutation();
   const createDeal = trpc.admin.createDeal.useMutation({ onSuccess: () => refetch() });
 
-  const BLANK_DRINK = { name: '', size: 'Pint', price: '', currency: 'EUR' };
+  const BLANK_DRINK = { name: '', size: 'Pint', price: '', currency: 'EUR', drinkType: 'other' };
   const [addDrinkOpen, setAddDrinkOpen] = useState(false);
   const [drinkForm, setDrinkForm] = useState(BLANK_DRINK);
 
@@ -856,6 +857,19 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-eyebrow opacity-70">DRINKS</h3>
           <div className="flex items-center gap-1">
+            {(barDetails?.drinks?.length ?? 0) > 0 && (
+              <button
+                onClick={async () => {
+                  if (!confirm(`Delete all ${barDetails!.drinks.length} drinks for this bar? This cannot be undone.`)) return;
+                  await deleteAllDrinks.mutateAsync({ barId });
+                  utils.bars.invalidate();
+                  refetch();
+                }}
+                className="text-meta text-[var(--color-blaze)] opacity-50 hover:opacity-100 min-h-[44px] px-2"
+              >
+                DELETE ALL
+              </button>
+            )}
             <button
               onClick={() => csvInputRef.current?.click()}
               className="flex items-center gap-1 text-meta text-[var(--color-paper)] opacity-60 hover:opacity-100 min-h-[44px] px-2"
@@ -1006,9 +1020,18 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
           <div key="add-drink-form" className="mb-3 p-3 border border-[var(--color-blaze)] space-y-2">
             <DrinkNameInput
               value={drinkForm.name}
-              onChange={v => setDrinkForm(f => ({ ...f, name: v }))}
+              onChange={v => setDrinkForm(f => ({ ...f, name: v, drinkType: detectDrinkType(v) }))}
               placeholder="Drink name"
             />
+            <select
+              value={drinkForm.drinkType}
+              onChange={e => setDrinkForm(f => ({ ...f, drinkType: e.target.value }))}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm text-[var(--color-paper)]"
+            >
+              {DRINK_TYPE_ORDER.map(t => (
+                <option key={t} value={t} className="bg-[var(--color-ink)]">{DRINK_TYPE_LABELS[t]}</option>
+              ))}
+            </select>
             <SizeSelect
               value={drinkForm.size}
               onChange={v => setDrinkForm(f => ({ ...f, size: v }))}
@@ -1042,6 +1065,7 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
                   size: drinkForm.size || undefined,
                   price: parseFloat(drinkForm.price),
                   currency: drinkForm.currency,
+                  drinkType: drinkForm.drinkType,
                   isVerified: true,
                 });
               }}
@@ -1194,8 +1218,12 @@ function DrinkRow({ drink, onDelete, onUpdate }: any) {
   if (editing) {
     return (
       <div className="space-y-2 p-2 bg-[var(--color-ink-soft)] border border-[var(--color-rule)]">
-        <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+        <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value, drinkType: form.drinkType || detectDrinkType(e.target.value) })}
           className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm" placeholder="Drink name" />
+        <select value={form.drinkType || detectDrinkType(form.name)} onChange={e => setForm({ ...form, drinkType: e.target.value })}
+          className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm text-[var(--color-paper)]">
+          {DRINK_TYPE_ORDER.map(t => <option key={t} value={t} className="bg-[var(--color-ink)]">{DRINK_TYPE_LABELS[t]}</option>)}
+        </select>
         <SizeSelect value={form.size || ''} onChange={v => setForm({ ...form, size: v })} />
         <div className="flex gap-2">
           <input type="number" step="0.01" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })}
@@ -1212,7 +1240,7 @@ function DrinkRow({ drink, onDelete, onUpdate }: any) {
           <span className="text-meta opacity-70">VERIFIED</span>
         </label>
         <div className="flex gap-2">
-          <button onClick={() => updateDrink.mutate({ id: drink.id, name: form.name, size: form.size || null, price: parseFloat(form.price), currency: form.currency, isVerified: form.isVerified })}
+          <button onClick={() => updateDrink.mutate({ id: drink.id, name: form.name, size: form.size || null, drinkType: form.drinkType || null, price: parseFloat(form.price), currency: form.currency, isVerified: form.isVerified })}
             className="flex-1 bg-[var(--color-verified)] text-[var(--color-ink)] min-h-[44px] font-display uppercase text-sm">SAVE</button>
           <button onClick={() => setEditing(false)} className="flex-1 border border-[var(--color-rule)] min-h-[44px] text-meta uppercase opacity-70">CANCEL</button>
         </div>
@@ -1240,7 +1268,7 @@ function DrinkRow({ drink, onDelete, onUpdate }: any) {
 /* ── DealRow ─────────────────────────────────────────────────── */
 function DealRow({ deal, onDelete, onUpdate }: any) {
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState(deal);
+  const [form, setForm] = useState({ ...deal, days: (() => { try { return JSON.parse(deal.daysOfWeek || '[]'); } catch { return []; } })() });
   const updateDeal = trpc.admin.updateDeal.useMutation({ onSuccess: () => { onUpdate(); setEditing(false); } });
 
   if (editing) {
@@ -1248,14 +1276,52 @@ function DealRow({ deal, onDelete, onUpdate }: any) {
       <div className="space-y-2 p-2 bg-[var(--color-ink-soft)] border border-[var(--color-rule)]">
         <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
           className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm" placeholder="Title" />
+        <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
+          className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm text-[var(--color-paper)]">
+          <option value="happy_hour" className="bg-[var(--color-ink)]">Happy Hour</option>
+          <option value="event" className="bg-[var(--color-ink)]">Event</option>
+          <option value="promotion" className="bg-[var(--color-ink)]">Promotion</option>
+        </select>
+        <input value={form.description || ''} onChange={e => setForm({ ...form, description: e.target.value })}
+          className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm" placeholder="Description (optional)" />
         <div className="flex gap-2">
-          <input value={form.startTime || ''} onChange={e => setForm({ ...form, startTime: e.target.value })}
-            className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm" placeholder="Start" />
-          <input value={form.endTime || ''} onChange={e => setForm({ ...form, endTime: e.target.value })}
-            className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-sm" placeholder="End" />
+          <div className="flex-1">
+            <div className="text-meta opacity-55 mb-1">START</div>
+            <input type="time" value={form.startTime || ''} onChange={e => setForm({ ...form, startTime: e.target.value })}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm" />
+          </div>
+          <div className="flex-1">
+            <div className="text-meta opacity-55 mb-1">END</div>
+            <input type="time" value={form.endTime || ''} onChange={e => setForm({ ...form, endTime: e.target.value })}
+              className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-sm" />
+          </div>
         </div>
+        <div>
+          <div className="text-meta opacity-55 mb-1">DAYS</div>
+          <div className="flex gap-1 flex-wrap">
+            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((day, idx) => (
+              <button key={idx} type="button"
+                onClick={() => {
+                  const days = form.days.includes(idx) ? form.days.filter((d: number) => d !== idx) : [...form.days, idx];
+                  setForm({ ...form, days });
+                }}
+                className={`px-2 py-1 text-meta border transition-colors ${form.days.includes(idx) ? 'bg-[var(--color-blaze)] text-[var(--color-paper)] border-[var(--color-blaze)]' : 'border-[var(--color-rule)] opacity-60'}`}
+              >{day.toUpperCase()}</button>
+            ))}
+          </div>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={!!form.isActive} onChange={e => setForm({ ...form, isActive: e.target.checked })} className="w-4 h-4" />
+          <span className="text-meta opacity-70">ACTIVE</span>
+        </label>
         <div className="flex gap-2">
-          <button onClick={() => updateDeal.mutate({ id: deal.id, title: form.title, type: deal.type, startTime: form.startTime, endTime: form.endTime })}
+          <button onClick={() => updateDeal.mutate({
+            id: deal.id, title: form.title, type: form.type,
+            description: form.description || null,
+            startTime: form.startTime, endTime: form.endTime,
+            daysOfWeek: JSON.stringify(form.days.length ? form.days : [0,1,2,3,4,5,6]),
+            isActive: !!form.isActive,
+          })}
             className="flex-1 bg-[var(--color-verified)] text-[var(--color-ink)] min-h-[44px] font-display uppercase text-sm">SAVE</button>
           <button onClick={() => setEditing(false)} className="flex-1 border border-[var(--color-rule)] min-h-[44px] text-meta uppercase opacity-70">CANCEL</button>
         </div>
@@ -1266,7 +1332,11 @@ function DealRow({ deal, onDelete, onUpdate }: any) {
     <div className="flex items-center gap-2 p-2 bg-[var(--color-ink-soft)] bg-opacity-50 min-h-[44px]">
       <div className="flex-1 min-w-0">
         <span className="font-display text-sm uppercase block truncate">{deal.title}</span>
-        {deal.startTime && <span className="text-meta opacity-60">{deal.startTime}–{deal.endTime}</span>}
+        <span className="text-meta opacity-60">
+          {deal.type?.toUpperCase()}
+          {deal.startTime ? ` · ${deal.startTime}–${deal.endTime}` : ''}
+          {!deal.isActive ? ' · INACTIVE' : ''}
+        </span>
       </div>
       <div className="flex gap-1 shrink-0">
         <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 min-h-[44px] border border-[var(--color-rule)] text-[var(--color-blaze)]">
