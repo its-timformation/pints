@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { X } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { trpc } from '../lib/trpc';
-import { useAppStore, formatPrice, convertPrice, isOpenNow } from '../lib/store';
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { ChevronRight, X } from "lucide-react";
+import { trpc } from "../lib/trpc";
+import { useAppStore, convertPrice, formatPrice, isOpenNow, distanceKm } from "../lib/store";
+import { LoadingMessage } from "./LoadingMessage";
 
 interface Props {
   open: boolean;
@@ -10,181 +11,227 @@ interface Props {
   userLocation?: { lat: number; lng: number } | null;
 }
 
-const SNAP_PARTIAL = 0.45;
-const SNAP_FULL = 0.88;
-const DISMISS_THRESHOLD = 0.25;
+// Snap points as fraction of viewport height the sheet occupies
+const SNAP_SM = 0.42;  // default — just enough for a few bars
+const SNAP_LG = 0.86;  // expanded — almost full screen
+const DISMISS_THRESHOLD = 0.22; // drag below this fraction → dismiss
+const VELOCITY_DISMISS = 800;   // px/s downward flick → dismiss
+const VELOCITY_EXPAND  = -600;  // px/s upward flick → expand
 
-export function GuinnessSheet({ open, onClose }: Props) {
+export function GuinnessSheet({ open, onClose, userLocation }: Props) {
   const { currency } = useAppStore();
-  const { data: barsWithDetails } = trpc.bars.getAllWithDetails.useQuery(undefined, { enabled: open });
+  const { data: allBars, isLoading } = trpc.bars.getAllWithDetails.useQuery(
+    undefined, { enabled: open }
+  );
 
-  const [snapHeight, setSnapHeight] = useState(SNAP_PARTIAL);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragY, setDragY] = useState(0);
+  // Sheet height as fraction of vh
+  const [snap, setSnap] = useState(SNAP_SM);
+  // During drag: actual pixel height (overrides snap)
+  const [dragH, setDragH] = useState<number | null>(null);
+  const [animating, setAnimating] = useState(false);
 
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const startYRef = useRef(0);
-  const startHeightRef = useRef(0);
-  const listRef = useRef<HTMLDivElement>(null);
+  // Drag tracking refs
+  const dragging = useRef(false);
+  const startY = useRef(0);
+  const startH = useRef(0);
+  const lastY = useRef(0);
+  const lastT = useRef(0);
+  const velocity = useRef(0);
 
+  // Reset snap when opened
   useEffect(() => {
-    if (open) setSnapHeight(SNAP_PARTIAL);
+    if (open) { setSnap(SNAP_SM); setDragH(null); }
   }, [open]);
 
-  // Scroll lock while open
+  // Escape key
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-      return () => { document.body.style.overflow = ''; };
-    }
-  }, [open]);
+    if (!open) return;
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open, onClose]);
 
   const vh = window.innerHeight;
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (listRef.current && listRef.current.scrollTop > 5) return;
-    setIsDragging(true);
-    startYRef.current = e.clientY;
-    startHeightRef.current = snapHeight * vh;
+  // --- Pointer handlers on the SHEET (not just handle) ---
+  const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    // Don't intercept clicks on interactive elements
+    const tag = (e.target as HTMLElement).tagName;
+    if (tag === "A" || tag === "BUTTON") return;
+
+    dragging.current = true;
+    startY.current = e.clientY;
+    startH.current = dragH ?? snap * vh;
+    lastY.current = e.clientY;
+    lastT.current = performance.now();
+    velocity.current = 0;
+    setAnimating(false);
     e.currentTarget.setPointerCapture(e.pointerId);
-  }, [snapHeight, vh]);
+  }, [dragH, snap, vh]);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging) return;
-    const delta = startYRef.current - e.clientY;
-    const newH = Math.max(80, Math.min(vh * 0.95, startHeightRef.current + delta));
-    setDragY(newH);
-  }, [isDragging, vh]);
-
-  const handlePointerUp = useCallback((_e: React.PointerEvent) => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    const h = dragY || snapHeight * vh;
-    const ratio = h / vh;
-    if (ratio < DISMISS_THRESHOLD) {
-      onClose();
-    } else if (ratio < (SNAP_PARTIAL + SNAP_FULL) / 2) {
-      setSnapHeight(SNAP_PARTIAL);
-    } else {
-      setSnapHeight(SNAP_FULL);
+  const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current) return;
+    const now = performance.now();
+    const dt = (now - lastT.current) / 1000; // seconds
+    if (dt > 0) {
+      velocity.current = (lastY.current - e.clientY) / dt; // +ve = moving up
     }
-    setDragY(0);
-  }, [isDragging, dragY, snapHeight, vh, onClose]);
+    lastY.current = e.clientY;
+    lastT.current = now;
 
-  const guinnessItems = (barsWithDetails ?? [])
-    .filter(b => b.servesGuinness)
-    .map(b => {
-      const drinks = (b.drinks ?? []).filter((d: any) =>
-        /guinness|stout/i.test(d.name)
-      );
-      const cheapest = drinks.length
-        ? drinks.reduce((min: any, d: any) => {
-            const p = convertPrice(d.price, d.currency, currency);
-            return p < min.price ? { price: p, drink: d } : min;
-          }, { price: Infinity, drink: drinks[0] })
-        : null;
-      return { bar: b, cheapest };
-    })
-    .filter(item => item.cheapest && item.cheapest.price !== Infinity)
-    .sort((a, b) => (a.cheapest?.price ?? 999) - (b.cheapest?.price ?? 999));
+    const delta = startY.current - e.clientY; // +ve = dragged up
+    const newH = Math.max(60, Math.min(vh * 0.95, startH.current + delta));
+    setDragH(newH);
+  }, [vh]);
+
+  const onPointerUp = useCallback(() => {
+    if (!dragging.current) return;
+    dragging.current = false;
+
+    const h = dragH ?? snap * vh;
+    const ratio = h / vh;
+    const v = velocity.current;
+
+    setAnimating(true);
+    setDragH(null);
+
+    if (v < VELOCITY_DISMISS || ratio < DISMISS_THRESHOLD) {
+      // Fast downward flick or dragged too low → dismiss
+      onClose();
+    } else if (v > Math.abs(VELOCITY_EXPAND)) {
+      // Fast upward flick → expand to large
+      setSnap(SNAP_LG);
+    } else {
+      // Snap to nearest
+      const midpoint = (SNAP_SM + SNAP_LG) / 2;
+      setSnap(ratio > midpoint ? SNAP_LG : SNAP_SM);
+    }
+  }, [dragH, snap, vh, onClose]);
+
+  const nearbyGuinnessBars = useMemo(() => {
+    if (!allBars) return [];
+    const guinnessBars = allBars.filter(b => b.servesGuinness);
+    const center = userLocation || { lat: 46.1893, lng: 6.7741 };
+    return guinnessBars
+      .map(b => {
+        const g = (b.drinks ?? []).find(d =>
+          d.name.toLowerCase().includes("guinness") ||
+          d.name.toLowerCase().includes("stout")
+        );
+        return {
+          ...b,
+          distance: distanceKm(center, { lat: b.lat, lng: b.lng }),
+          guinnessPrice: g ? { price: g.price, currency: g.currency } : null,
+        };
+      })
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 12);
+  }, [allBars, userLocation]);
 
   if (!open) return null;
 
-  const sheetHeight = isDragging ? dragY : snapHeight * vh;
+  const sheetH = dragH ?? snap * vh;
 
   return (
-    <div className="fixed inset-0 z-[90]">
+    <div className="fixed inset-0 z-[90]" role="dialog" aria-label="Nearest Guinness">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black"
-        style={{ opacity: 0.5 }}
+      <button
+        className="absolute inset-0 bg-[var(--color-ink)] opacity-70 cursor-default"
         onClick={onClose}
+        aria-label="Close"
       />
 
-      {/* Sheet */}
+      {/* Sheet — drag on the WHOLE sheet */}
       <div
-        ref={sheetRef}
-        className="absolute bottom-0 left-0 right-0 bg-[var(--color-paper)] text-[var(--color-ink)] rounded-t-2xl flex flex-col"
+        className="absolute bottom-0 left-0 right-0 bg-[var(--color-paper)] text-[var(--color-ink)] rounded-t-2xl flex flex-col select-none"
         style={{
-          height: sheetHeight,
-          transition: isDragging ? 'none' : 'height 0.3s cubic-bezier(0.32,0.72,0,1)',
-          willChange: 'height',
-          touchAction: 'none',
+          height: sheetH,
+          transition: animating && !dragging.current
+            ? "height 0.32s cubic-bezier(0.32,0.72,0,1)"
+            : "none",
+          touchAction: "none",
+          cursor: dragging.current ? "grabbing" : "grab",
+          willChange: "height",
         }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
       >
-        {/* Drag handle */}
-        <div className="shrink-0 flex justify-center pt-3 pb-1 cursor-grab select-none">
-          <div className="w-12 h-1 rounded-full bg-[var(--color-ink)] opacity-20" />
+        {/* Drag handle indicator */}
+        <div className="shrink-0 flex justify-center pt-3 pb-1 pointer-events-none">
+          <div className="w-10 h-1 rounded-full bg-[var(--color-ink)] opacity-20" />
         </div>
 
         {/* Header */}
-        <div className="px-5 pb-3 flex items-start justify-between gap-4 shrink-0">
+        <div className="px-5 pb-3 flex items-start justify-between gap-4 shrink-0 pointer-events-none">
           <div>
-            <div className="text-eyebrow opacity-60 mb-1">PERFECT TIME FOR A GUINNESS</div>
-            <h2 className="text-headline">WORTH THE<br/>WALK</h2>
+            <div className="text-eyebrow opacity-60">PERFECT TIME FOR A GUINNESS</div>
+            <h2 className="text-headline mt-1">WORTH THE<br/>WALK</h2>
           </div>
           <button
             onClick={onClose}
-            className="mt-1 p-1.5 opacity-50 hover:opacity-100 !min-h-0 shrink-0"
+            className="p-2 -mr-2 pointer-events-auto !min-h-0 cursor-pointer"
+            aria-label="Close"
             onPointerDown={e => e.stopPropagation()}
           >
-            <X size={18} strokeWidth={1.6} />
+            <X size={20} strokeWidth={1.6} />
           </button>
         </div>
 
-        {/* Scrollable list */}
-        <div
-          ref={listRef}
-          className="flex-1 overflow-y-auto"
-          style={{ overscrollBehavior: 'contain' }}
-          onPointerDown={e => {
-            if (listRef.current && listRef.current.scrollTop > 5) {
-              e.stopPropagation();
-            }
-          }}
-        >
-          {guinnessItems.length === 0 ? (
-            <div className="px-5 py-12 text-center">
-              <div className="font-display text-xl uppercase">NO STOUT IN SIGHT</div>
-              <div className="text-meta opacity-60 mt-3">No Guinness pourers found yet.</div>
+        {/* Bar list — NO overflow scroll, content just renders */}
+        <div className="flex-1 pointer-events-none overflow-hidden">
+          {isLoading ? (
+            <LoadingMessage surface="guinness" />
+          ) : nearbyGuinnessBars.length === 0 ? (
+            <div className="px-5 py-10 text-center">
+              <div className="text-section uppercase">NO STOUT IN SIGHT</div>
+              <div className="text-meta opacity-60 mt-3">
+                No Guinness pourers found nearby yet.
+              </div>
             </div>
           ) : (
-            <ul className="pb-4">
-              {guinnessItems.map(({ bar, cheapest }, i) => {
+            <ul>
+              {nearbyGuinnessBars.map((bar, i) => {
+                const priceInfo = bar.guinnessPrice;
                 const openState = isOpenNow(bar.openingHours);
                 return (
                   <li key={bar.id}>
                     <Link
                       to={`/bar/${bar.id}`}
-                      className="hairline-b-soft flex items-center gap-3 px-5 py-3.5"
                       onClick={onClose}
+                      className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--color-rule-paper)] last:border-b-0 pointer-events-auto"
                       onPointerDown={e => e.stopPropagation()}
                     >
-                      <span className="num-rail text-[var(--color-blaze)] w-6 shrink-0 text-sm">
-                        {String(i + 1).padStart(2, '0')}
+                      <span className="num-rail text-[var(--color-blaze)] w-6 shrink-0">
+                        {String(i + 1).padStart(2, "0")}
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="font-display text-base uppercase">
                           {bar.name}
                         </div>
-                        <div className="text-meta opacity-55 mt-0.5 flex items-center gap-1.5">
+                        <div className="text-meta opacity-60 mt-0.5 flex items-center gap-1.5">
                           <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
-                            openState.open ? 'bg-[var(--color-verified)]' : 'bg-[var(--color-ink)] opacity-30'
+                            openState.open
+                              ? "bg-[var(--color-verified)]"
+                              : "bg-[var(--color-ink)] opacity-35"
                           }`} />
-                          {openState.open ? `OPEN UNTIL ${openState.closesAt}` : 'CLOSED'}
-                          {' · '}
-                          {bar.area?.toUpperCase()}
+                          {openState.open
+                            ? `OPEN UNTIL ${openState.closesAt}`
+                            : `OPENS ${openState.opensAt ?? "—"}`}
+                          {" · "}{bar.distance.toFixed(1)} KM
+                          {" · "}{bar.area?.toUpperCase()}
                         </div>
                       </div>
-                      {cheapest && (
-                        <div className="font-display text-lg text-[var(--color-blaze)] shrink-0">
-                          {formatPrice(cheapest.price, currency)}
+                      {priceInfo && (
+                        <div className="font-display text-lg shrink-0">
+                          {formatPrice(
+                            convertPrice(priceInfo.price, priceInfo.currency as any, currency),
+                            currency
+                          )}
                         </div>
                       )}
+                      <ChevronRight size={14} strokeWidth={1.4} className="opacity-50 shrink-0" />
                     </Link>
                   </li>
                 );
@@ -193,13 +240,12 @@ export function GuinnessSheet({ open, onClose }: Props) {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="shrink-0 hairline-t">
+        {/* Footer CTA — black outline button */}
+        <div className="shrink-0 px-5 py-4 border-t border-[var(--color-rule-paper)] pointer-events-none">
           <Link
-            to="/list"
-            state={{ guinnessFilter: true }}
+            to="/list?filter=guinness"
             onClick={onClose}
-            className="flex items-center justify-center gap-2 py-4 text-meta opacity-60 hover:opacity-100"
+            className="pointer-events-auto flex items-center justify-center gap-2 border-2 border-[var(--color-ink)] text-[var(--color-ink)] py-3 text-meta font-display uppercase hover:bg-[var(--color-ink)] hover:text-[var(--color-paper)] transition-colors"
             onPointerDown={e => e.stopPropagation()}
           >
             VIEW ALL GUINNESS BARS →
@@ -210,6 +256,9 @@ export function GuinnessSheet({ open, onClose }: Props) {
   );
 }
 
+/**
+ * Dashboard banner that triggers the sheet.
+ */
 export function GuinnessBanner({ onOpen }: { onOpen: () => void }) {
   return (
     <button
@@ -219,9 +268,13 @@ export function GuinnessBanner({ onOpen }: { onOpen: () => void }) {
     >
       <div className="text-left">
         <div className="text-eyebrow opacity-60">PERFECT TIME FOR</div>
-        <div className="font-display text-2xl uppercase leading-none mt-1.5">A GUINNESS</div>
+        <div className="font-display text-2xl uppercase leading-none mt-1.5">
+          A GUINNESS
+        </div>
       </div>
-      <svg width="14" height="16" viewBox="0 0 14 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <svg width="14" height="16" viewBox="0 0 14 16" fill="none"
+           stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+           strokeLinejoin="round" aria-hidden>
         <path d="M7 14 L7 2 M2 7 L7 2 L12 7" />
       </svg>
     </button>
