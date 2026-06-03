@@ -221,3 +221,4 @@
   40%,80% { transform: translateX(8px); }
 }
 .shake { animation: shake 320ms ease-in-out; }
+.leaflet-control-attribution { display: none !important; }

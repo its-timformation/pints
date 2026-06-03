@@ -626,7 +626,7 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
       }
       await createBulk.mutateAsync({
         barId,
-        drinks: included.map(r => ({ name: r.name, size: r.size, price: r.price, currency: r.currency })),
+        drinks: included.map(r => ({ name: r.name, size: r.size, price: r.price, currency: r.currency, drinkType: r.drinkType })),
       });
       utils.bars.invalidate();
       refetch();
@@ -637,7 +637,7 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
   }
 
   function downloadTemplate() {
-    const csv = 'name,size,price,currency\nMaxi Bière,70CL,11.50,EUR\nPelforth,25CL,4.00,EUR\nGuinness,50CL,9.00,EUR\n';
+    const csv = 'name,size,price,currency,type\nMaxi Bière,70CL,11.50,EUR,draft_beer\nPelforth,25CL,4.00,EUR,draft_beer\nGuinness,50CL,9.00,EUR,draft_beer\nVin Rouge,75CL,28.00,EUR,wine\nMojito,,12.00,EUR,cocktail\n';
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -646,6 +646,21 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
     a.click();
     URL.revokeObjectURL(url);
   }
+
+  const AI_PROMPT = `Read the attached drinks menu image and convert it into a downloadable CSV file with exactly these columns: name, size, price, currency, type
+
+Rules:
+- One row per drink. Include a header row.
+- When a drink lists multiple sizes/prices, create a separate row for each.
+- name — drink name only, no size or price.
+- size — volume as shown (e.g. 70CL, 25CL, 4CL). Blank if not shown.
+- price — number only, no currency symbol.
+- currency — EUR unless clearly shown otherwise. Values: EUR, GBP, CHF.
+- type — one of: draft_beer, bottled_beer, canned_beer, wine, cocktail, shot, spirit, vin_chaud, other
+- Skip section headings and items without a clear price.
+- Output only raw CSV, nothing else — no explanation, no markdown fences.
+
+Output as a downloadable .csv file named after the bar.`;
 
   const [editingBar, setEditingBar] = useState(false);
   const [barForm, setBarForm] = useState(barData);
@@ -922,16 +937,24 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
             </div>
 
             {/* Format hint */}
-            <div className="px-3 py-2 border-b border-[var(--color-rule)] space-y-1">
+            <div className="px-3 py-2 border-b border-[var(--color-rule)] space-y-1.5">
               <div className="text-meta opacity-50 text-xs">
-                CSV COLUMNS: name, size, price, currency · Example: Maxi Bière,70CL,11.50,EUR · Currency optional (defaults to EUR). Header row optional.
+                CSV COLUMNS: name, size, price, currency, type · type is optional (auto-detected if blank).
               </div>
-              <button
-                onClick={downloadTemplate}
-                className="text-meta text-xs text-[var(--color-blaze)] opacity-70 hover:opacity-100"
-              >
-                ↓ DOWNLOAD TEMPLATE
-              </button>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={downloadTemplate}
+                  className="text-meta text-xs text-[var(--color-blaze)] opacity-70 hover:opacity-100"
+                >
+                  ↓ DOWNLOAD TEMPLATE
+                </button>
+                <button
+                  onClick={() => navigator.clipboard.writeText(AI_PROMPT).then(() => alert('Prompt copied!'))}
+                  className="text-meta text-xs text-[var(--color-blaze)] opacity-70 hover:opacity-100"
+                >
+                  ⎘ COPY AI PROMPT
+                </button>
+              </div>
             </div>
 
             {/* Rows */}
@@ -1077,16 +1100,32 @@ function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData
           </div>
         )}
 
-        <div className="space-y-1.5">
-          {[...(barDetails.drinks ?? [])].sort((a, b) => {
+        {barDetails.drinks?.length === 0 && <div className="text-meta opacity-55">No drinks yet.</div>}
+        {(() => {
+          const sortedDrinks = [...(barDetails.drinks ?? [])].sort((a, b) => {
             const nameCompare = a.name.localeCompare(b.name);
             if (nameCompare !== 0) return nameCompare;
             return parseSizeValue(a.size) - parseSizeValue(b.size);
-          }).map(drink => (
-            <DrinkRow key={drink.id} drink={drink} onDelete={() => deleteDrink.mutate({ id: drink.id })} onUpdate={refetch} />
-          ))}
-          {barDetails.drinks?.length === 0 && <div className="text-meta opacity-55">No drinks yet.</div>}
-        </div>
+          });
+          const grouped = DRINK_TYPE_ORDER.reduce((acc, type) => {
+            const typeDrinks = sortedDrinks.filter(d => ((d as any).drinkType || detectDrinkType(d.name)) === type);
+            if (typeDrinks.length > 0) acc[type] = typeDrinks;
+            return acc;
+          }, {} as Record<string, typeof sortedDrinks>);
+          return Object.entries(grouped).map(([type, typeDrinks]) => (
+            <div key={type} className="mb-2">
+              <div className="border-l-2 border-[var(--color-blaze)] px-2 py-1 flex items-center justify-between mb-1">
+                <span className="text-eyebrow text-[var(--color-blaze)]">{DRINK_TYPE_LABELS[type as keyof typeof DRINK_TYPE_LABELS]}</span>
+                <span className="text-meta opacity-40">{typeDrinks.length.toString().padStart(2,'0')}</span>
+              </div>
+              <div className="space-y-1.5">
+                {typeDrinks.map(drink => (
+                  <DrinkRow key={drink.id} drink={drink} onDelete={() => deleteDrink.mutate({ id: drink.id })} onUpdate={refetch} />
+                ))}
+              </div>
+            </div>
+          ));
+        })()}
       </div>
 
       <div>

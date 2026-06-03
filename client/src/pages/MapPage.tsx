@@ -117,7 +117,7 @@ export default function MapPage() {
         >
           <TileLayer
             url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
-            attribution="&copy; Stadia Maps &copy; OpenMapTiles &copy; OpenStreetMap contributors"
+            attribution=""
             maxZoom={20}
           />
           <MapReady onReady={m => { mapRef.current = m; }} />

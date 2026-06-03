@@ -1,13 +1,17 @@
+import { detectDrinkType } from './detectDrinkType';
+
 export interface ParsedDrinkRow {
   name: string;
   size: string | null;
   price: number;
   currency: string;
+  drinkType: string;
   include: boolean;
   warning: string | null;
 }
 
 const VALID_CURRENCIES = ['EUR', 'GBP', 'CHF', 'USD'];
+const VALID_TYPES = ['draft_beer', 'bottled_beer', 'canned_beer', 'wine', 'cocktail', 'shot', 'spirit', 'vin_chaud', 'other'];
 
 export function parseMenuCsv(text: string): { rows: ParsedDrinkRow[]; error: string | null } {
   const lines = text.trim().split(/\r?\n/).filter(l => l.trim());
@@ -41,6 +45,9 @@ export function parseMenuCsv(text: string): { rows: ParsedDrinkRow[]; error: str
     let currency = (get('currency') || 'EUR').toUpperCase();
     if (!VALID_CURRENCIES.includes(currency)) currency = 'EUR';
 
+    const rawType = get('type').trim().toLowerCase();
+    const drinkType = VALID_TYPES.includes(rawType) ? rawType : detectDrinkType(name);
+
     const price = parseFloat(priceRaw);
 
     let warning: string | null = null;
@@ -53,6 +60,7 @@ export function parseMenuCsv(text: string): { rows: ParsedDrinkRow[]; error: str
       size: sizeRaw || null,
       price: isNaN(price) ? 0 : price,
       currency,
+      drinkType,
       include: warning === null,
       warning,
     });

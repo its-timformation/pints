@@ -1,0 +1,131 @@
+name,size,price,currency
+Shit On The Grass,4CL,6.00,EUR
+Monkey Brain,4CL,6.00,EUR
+B52,4CL,6.00,EUR
+Madeleine,4CL,6.00,EUR
+Slippery Nipples,4CL,6.00,EUR
+Purple Haze,4CL,6.00,EUR
+Le Milette,4CL,6.00,EUR
+Blowjob,4CL,6.00,EUR
+Baby Guiness,4CL,6.00,EUR
+Orgasmic,4CL,6.00,EUR
+Tiramishot,4CL,6.00,EUR
+Two Horsemen,4CL,6.00,EUR
+Schnaps,,5.00,EUR
+Poire William Maison,,5.00,EUR
+Génépi,,5.00,EUR
+1664,25CL,4.20,EUR
+1664,50CL,8.40,EUR
+1664,150CL,24.50,EUR
+1664 Blanche,25CL,4.70,EUR
+1664 Blanche,50CL,9.40,EUR
+1664 Blanche,150CL,27.50,EUR
+Grimbergen Blonde,25CL,5.80,EUR
+Grimbergen Blonde,50CL,10.50,EUR
+Grimbergen Blonde,150CL,29.50,EUR
+Brooklyn Lager IPA,25CL,5.80,EUR
+Brooklyn Lager IPA,50CL,10.50,EUR
+Brooklyn Lager IPA,150CL,29.50,EUR
+Bière du Moment,25CL,5.80,EUR
+Bière du Moment,50CL,10.50,EUR
+Bière du Moment,150CL,29.50,EUR
+Picon Bière,25CL,5.80,EUR
+Picon Bière,50CL,10.50,EUR
+Monaco, Panaché ou Bières Sirop,25CL,4.50,EUR
+Monaco, Panaché ou Bières Sirop,50CL,9.00,EUR
+Desperados,33CL,6.30,EUR
+Corona,33CL,6.30,EUR
+Brooklyn IPA,33CL,6.30,EUR
+1664,33CL,5.50,EUR
+Pietra,,7.50,EUR
+Limoncella,,7.50,EUR
+Corona,,7.50,EUR
+Cidre Magners,,7.50,EUR
+Guinness,55.8CL,11.00,EUR
+NEPA Rocket Fuel,33CL,7.50,EUR
+Lager La Montz,,7.50,EUR
+IPA Cabin Fever,,7.50,EUR
+Pale Ale Néon,,7.50,EUR
+Verte,,7.50,EUR
+Bleue,,7.50,EUR
+Rousse,,7.50,EUR
+Kir au Vin Blanc,15CL,5.80,EUR
+Kir Pétillant à la Méthode Trad.,15CL,7.30,EUR
+Kir Royal,15CL,13.50,EUR
+Pétillant de Savoie AOP,15CL,7.00,EUR
+Ricard, Pastis 51,4CL,4.20,EUR
+Campari, Suze, Martini Rouge ou Blanc,,6.30,EUR
+Campari Orange,,8.40,EUR
+Porto Rouge ou Blanc,,6.30,EUR
+Le Mojito,,12.00,EUR
+Le Mojito Royal,,15.00,EUR
+Le Ti Punch,,11.00,EUR
+Le Tequila Sunrise,,12.00,EUR
+Le Gin Fizz,,12.00,EUR
+Le Bloody Mary,,12.00,EUR
+La Caïpiroska ou Caïpirinha,,11.00,EUR
+L'Espresso Martini,,12.00,EUR
+Margarita,,12.00,EUR
+Sangria,,9.00,EUR
+L'Americano,,11.00,EUR
+Le Negroni,,12.00,EUR
+La Grande Madeleine,,12.00,EUR
+L'Aperol Spritz,,12.00,EUR
+Le Hugo Spritz,,12.00,EUR
+Le Limoncello Spritz,,12.00,EUR
+Le Campari Spritz,,12.00,EUR
+Le Fée des Monts Spritz,,13.00,EUR
+Le Moscow Mule,,12.00,EUR
+Le Jamaican Mule,,12.00,EUR
+Le London Mule,,12.00,EUR
+Vodka Pomme,,6.00,EUR
+Vin Chaud,,5.50,EUR
+Grog,,10.00,EUR
+Xanté,,6.00,EUR
+Choco Rhum, Green Chaud, Amaretto,,10.00,EUR
+Irish Coffee,,12.00,EUR
+Jamaican Coffee,,12.00,EUR
+Italian Coffee,,12.00,EUR
+Cognac Hennessy Very Special,6CL,12.00,EUR
+Grand Marnier ou Cointreau,6CL,10.00,EUR
+Calvados Père Magloire Fine V.S,6CL,10.00,EUR
+Chartreuse Verte,6CL,12.00,EUR
+Armagnac Clé du Duc V.S.O.P,6CL,10.00,EUR
+Génépi ou Poire,6CL,9.00,EUR
+Marc de Savoie,6CL,9.00,EUR
+Limoncello ou Sambuca,6CL,9.00,EUR
+Amaretto,6CL,9.00,EUR
+Rhum Pampero Ambré,6CL,10.00,EUR
+Rhum Pampero Ambré,70CL,110.00,EUR
+Rhum Pampero Bianco,6CL,10.00,EUR
+Rhum Pampero Bianco,70CL,110.00,EUR
+Mates Gold Rhum,,11.00,EUR
+Rhum Angostura 1919,,13.00,EUR
+Rhum Zacapa 6 à 23 Ans d'Âge,,15.00,EUR
+Captain Morgan,6CL,10.00,EUR
+Captain Morgan,70CL,105.00,EUR
+Vodka Smirnoff,6CL,10.00,EUR
+Vodka Smirnoff,75CL,105.00,EUR
+Vodka Belvédère,6CL,13.00,EUR
+Vodka Belvédère,70CL,127.00,EUR
+Gin Tanqueray,6CL,10.00,EUR
+Gin Tanqueray,75CL,105.00,EUR
+Gin Hendrix,,12.00,EUR
+Tequila San Jose,6CL,10.00,EUR
+Tequila Olmeca,,14.00,EUR
+J&B,6CL,10.00,EUR
+J&B,75CL,105.00,EUR
+Jameson,,11.00,EUR
+Jack Daniel's,6CL,12.00,EUR
+Jack Daniel's,75CL,115.00,EUR
+Aberlour 10 Ans,,14.00,EUR
+Nikka From The Barrel,,14.00,EUR
+Get 27,6CL,10.00,EUR
+Get 27,75CL,105.00,EUR
+Get 27,1L,120.00,EUR
+Bailey's,6CL,10.00,EUR
+Bailey's,75CL,105.00,EUR
+Jaggermeister,6CL,10.00,EUR
+Jaggermeister,75CL,105.00,EUR
+Jaggermeister,1L,120.00,EUR
+Red Bull Canette,25CL,6.00,EUR

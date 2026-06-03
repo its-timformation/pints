@@ -1,0 +1,60 @@
+name,size,price,currency
+Peroni,,6.50,EUR
+Ichnusa,,6.50,EUR
+Desperados,,7.00,EUR
+Corona,,7.00,EUR
+Peroni 0%,,7.00,EUR
+Cornish Cider,50cl,9.00,EUR
+Cinzano Aperitivo Spritz,,9.50,EUR
+Hugo Spritz,,9.50,EUR
+Limoncello Spritz,,9.50,EUR
+Ricard / Suze,,4.00,EUR
+Beefeater,,9.50,EUR
+Malfy Limone,,11.00,EUR
+Monkey 47,,13.00,EUR
+Grolsch Blonde,25cl,4.50,EUR
+Grolsch Blonde,50cl,9.00,EUR
+Peroni,25cl,4.80,EUR
+Peroni,50cl,9.60,EUR
+Grolsch Blanche,25cl,5.00,EUR
+Grolsch Blanche,50cl,10.00,EUR
+Meantime IPA,25cl,5.00,EUR
+Meantime IPA,50cl,10.00,EUR
+Panaché / Monaco,25cl,4.50,EUR
+Panaché / Monaco,50cl,9.00,EUR
+Picon Biere,25cl,5.00,EUR
+Picon Biere,50cl,10.00,EUR
+Classiques: Havana Club Rhum, Clan Caribbean Spiced Rhum Absolut Vodka, Ballantine’s, Beefeater Gin...,,9.50,EUR
+Premiums: Belvedere Vodka, Grey Goose vodka, Jack Daniel S...,,11.00,EUR
+Mojito,,11.00,EUR
+Mojito Royal,,13.00,EUR
+Moscow Mule,,11.00,EUR
+Jamaican Mule,,11.00,EUR
+Cuba Libre,,11.00,EUR
+Ti Punch,,8.50,EUR
+El Diablo,,12.00,EUR
+Long Island,,14.00,EUR
+Cocktail du Moment,,12.00,EUR
+Tequilacello,,5.00,EUR
+Génépi,,5.00,EUR
+Sambuca,,5.00,EUR
+Orgasme,,5.00,EUR
+Baby Guinness,,5.00,EUR
+Jagermeister,,5.00,EUR
+Jäger Bomb,,8.00,EUR
+Fireball,,9.00,EUR
+Shooter du Moment,,5.00,EUR
+Rosé Verre,,5.00,EUR
+Rosé Paradis (Méditerranée),,24.00,EUR
+Rosé Château Saint-Martin (Cote de provence, cru classe),,49.00,EUR
+Rosé Magnum Château Saint-Martin (Cote de provence, cru classe),,90.00,EUR
+Blanc Verre,,5.00,EUR
+Blanc Chardonnay,,26.00,EUR
+Rouge Verre,,5.00,EUR
+Rouge Bordeaux,,29.00,EUR
+Prosecco Verre,,8.00,EUR
+Prosecco Bouteille,,32.00,EUR
+G.H.MUMM Bouteille,,90.00,EUR
+G.H.MUMM Magnum,,160.00,EUR
+Veuve Clicquot Bouteille,,100.00,EUR
+Veuve Clicquot BordeMagnumaux,,180.00,EUR

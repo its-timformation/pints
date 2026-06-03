@@ -1,0 +1,125 @@
+name,size,price,currency
+Peroni,25CL,4.50,EUR
+Peroni,50CL,8.50,EUR
+Punk IPA,25CL,5.00,EUR
+Punk IPA,50CL,9.20,EUR
+Hazy Jane Guava IPA,25CL,5.00,EUR
+Hazy Jane Guava IPA,50CL,9.20,EUR
+Cornish Orchards Cider,25CL,4.50,EUR
+Cornish Orchards Cider,50CL,9.00,EUR
+La Bete,25CL,5.00,EUR
+La Bete,50CL,9.20,EUR
+Guinness,25CL,5.00,EUR
+Guinness,50CL,9.50,EUR
+Lost Lager,25CL,4.50,EUR
+Lost Lager,50CL,8.50,EUR
+San Miguel,25CL,4.50,EUR
+San Miguel,50CL,8.50,EUR
+Heineken,25CL,6.00,EUR
+Corona,35CL,7.50,EUR
+Desperados,33CL,7.50,EUR
+Mont Blanc Blanche,33CL,7.50,EUR
+Paix Dieu,33CL,9.00,EUR
+Ibex Low Alco,33CL,6.00,EUR
+Heineken 0.00%,33CL,6.00,EUR
+Martini,5CL,6.00,EUR
+Martini with mixer,5CL,7.00,EUR
+Porto,5CL,5.00,EUR
+Kir Cassis,10CL,5.00,EUR
+Kir Royale,10CL,6.00,EUR
+Ricard,2CL,5.00,EUR
+Suze,5CL,5.00,EUR
+Viognier - blanc,14.5CL,5.50,EUR
+Viognier - blanc,75CL,24.00,EUR
+Malbec Arg - rouge,14.5CL,5.50,EUR
+Malbec Arg - rouge,75CL,24.00,EUR
+St Tropez - rosé,14.5CL,5.50,EUR
+St Tropez - rosé,75CL,24.00,EUR
+Vin Chaud,,5.50,EUR
+Vin Chaud,75CL,32.00,EUR
+Prosecco,10CL,5.50,EUR
+Veuve Clicquot,75CL,110.00,EUR
+Veuve Clicquot,150CL,200.00,EUR
+Red Bull,,6.00,EUR
+Smirnoff Vodka,2CL,7.00,EUR
+Smirnoff Vodka,4CL,10.00,EUR
+Gordon's Gin/Pink Gin,2CL,7.00,EUR
+Gordon's Gin/Pink Gin,4CL,10.00,EUR
+J&B Scotch Whisky,2CL,7.00,EUR
+J&B Scotch Whisky,4CL,10.00,EUR
+Captain Morgan Spiced Rum,2CL,7.00,EUR
+Captain Morgan Spiced Rum,4CL,10.00,EUR
+Havana Club 3Anos Rum,2CL,7.00,EUR
+Havana Club 3Anos Rum,4CL,10.00,EUR
+Baileys Irish Cream,2CL,7.00,EUR
+Baileys Irish Cream,4CL,10.00,EUR
+Malibu Coconut Rum,2CL,7.00,EUR
+Malibu Coconut Rum,4CL,10.00,EUR
+El Jimador Reposado Tequila,2CL,7.00,EUR
+El Jimador Reposado Tequila,4CL,10.00,EUR
+Get 27,2CL,7.00,EUR
+Get 27,4CL,10.00,EUR
+Jack Daniels / JD Honey / JD Rye,2CL,7.50,EUR
+Jack Daniels / JD Honey / JD Rye,4CL,10.50,EUR
+Hennessy Cognac,2CL,7.50,EUR
+Hennessy Cognac,4CL,10.50,EUR
+Southern Comfort,2CL,7.50,EUR
+Southern Comfort,4CL,10.50,EUR
+Bombay Saphire Gin,2CL,7.50,EUR
+Bombay Saphire Gin,4CL,10.50,EUR
+Jameson's Irish Whisky,2CL,7.00,EUR
+Jameson's Irish Whisky,4CL,10.50,EUR
+Monkey Shoulder Whisky,2CL,7.00,EUR
+Monkey Shoulder Whisky,4CL,10.50,EUR
+Kahlua/Cointreau,2CL,7.00,EUR
+Kahlua/Cointreau,4CL,10.50,EUR
+Disaronno,2CL,7.00,EUR
+Disaronno,4CL,10.00,EUR
+Havana Club Especial Rum Premium,2CL,7.50,EUR
+Havana Club Especial Rum Premium,4CL,10.50,EUR
+Don Papa Rum,2CL,8.00,EUR
+Don Papa Rum,4CL,11.00,EUR
+Diplomatico Rum,2CL,8.00,EUR
+Diplomatico Rum,4CL,11.00,EUR
+Zacapa Rum,2CL,8.50,EUR
+Zacapa Rum,4CL,12.00,EUR
+Yamazakura Whisky,2CL,8.00,EUR
+Yamazakura Whisky,4CL,11.00,EUR
+Belvedere Vodka,2CL,8.00,EUR
+Belvedere Vodka,4CL,11.00,EUR
+Hendricks Gin,2CL,8.00,EUR
+Hendricks Gin,4CL,11.00,EUR
+Tangueray 10 Gin,2CL,8.00,EUR
+Tangueray 10 Gin,4CL,11.00,EUR
+Herradura Tequilla,2CL,8.00,EUR
+Herradura Tequilla,4CL,11.00,EUR
+Genepi,4CL,10.00,EUR
+Poir William,4CL,10.00,EUR
+Sambuca,3CL,5.00,EUR
+Tequila (Jimador Reposado),3CL,5.00,EUR
+"Jack Fire, Honey + Apple",3CL,5.50,EUR
+"Genepi, Poire",3CL,5.50,EUR
+Jägermeister,3CL,5.50,EUR
+Baby Guinness,3CL,5.50,EUR
+Toffee Vodka,3CL,5.00,EUR
+Cucumber Tequila,3CL,5.00,EUR
+Rum Arrange,3CL,4.50,EUR
+Jager Bomb,,8.00,EUR
+Skittle Bomb,,8.00,EUR
+Car Bomb,,8.00,EUR
+Dr Pepper,,8.00,EUR
+Mojito,,12.00,EUR
+Long Island Iced Tea,,12.00,EUR
+Dark N' Stormy,,12.00,EUR
+Tennessee Mule,,12.00,EUR
+Moscow Mule,,12.00,EUR
+Caipirinha/Caipiroska,,12.00,EUR
+Ti Punch,,12.00,EUR
+Pink Gin Spritz,,12.00,EUR
+Aperol Spritz,,10.50,EUR
+Hugo Spritz,,10.50,EUR
+Margarita,,12.00,EUR
+Sex on the Beach,,12.00,EUR
+Cosmopolitan,,12.00,EUR
+Expresso Martini,,12.00,EUR
+Pina Colada,,12.00,EUR

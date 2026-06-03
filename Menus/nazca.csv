@@ -1,0 +1,123 @@
+name,size,price,currency
+Big Mountain Blonde,25CL,4.00,EUR
+Big Mountain Blonde,50CL,7.00,EUR
+Big Mountain IPA,25CL,4.50,EUR
+Big Mountain IPA,50CL,8.00,EUR
+St Stefanus,25CL,4.50,EUR
+St Stefanus,50CL,8.50,EUR
+Ibex Alpine Blanche,25CL,4.50,EUR
+Ibex Alpine Blanche,50CL,8.50,EUR
+Ibex Rocket Fuel NEIPA,25CL,5.00,EUR
+Ibex Rocket Fuel NEIPA,50CL,9.00,EUR
+Guinness,25CL,5.00,EUR
+Guinness,50CL,9.00,EUR
+Desperados,33CL,5.50,EUR
+Corona,35.5CL,5.50,EUR
+Liefmans Fruitiesse,25CL,5.50,EUR
+Pietra,33CL,6.50,EUR
+Duvel,33CL,6.50,EUR
+Brasseurs Savoyards - Pilsner,33CL,6.50,EUR
+Big Mountain Pale Ale,33CL,6.50,EUR
+Big Mountain Nano IPA,33CL,6.50,EUR
+Magners Pression,25CL,4.50,EUR
+Magners Pression,50CL,8.00,EUR
+Cidre La Mordue,33CL,5.00,EUR
+Suze,4CL,5.00,EUR
+Kir Blanc,12CL,4.00,EUR
+Kir + Petillant,12CL,5.50,EUR
+Ricard,2CL,3.00,EUR
+Martini,5CL,5.00,EUR
+Campari,5CL,5.00,EUR
+Prosecco,12CL,7.00,EUR
+Aperol Spritz,12CL,9.00,EUR
+Lemon Spritz,12CL,9.00,EUR
+Hugo Spritz,12CL,9.00,EUR
+Bergamote Spritz,12CL,9.00,EUR
+Campari Spritz,12CL,9.50,EUR
+Rhubarbe Spritz,12CL,9.00,EUR
+Vin Chaud,,4.00,EUR
+Mojito,,10.00,EUR
+Mojito Nazca Au Génépi,,11.00,EUR
+Ti Punch,,8.00,EUR
+Paloma,,9.50,EUR
+Caipirinha,,9.00,EUR
+Espresso Martini,,10.00,EUR
+Pisco Sour,,10.50,EUR
+Cuba Libre,,9.00,EUR
+Moscow Mule,,9.50,EUR
+Bloody Mary,,9.50,EUR
+Russian Blond,,10.50,EUR
+Lynchburg Lemonade,,10.00,EUR
+Dark and Stormy,,10.00,EUR
+Hibiscus et Citron Vert,,10.00,EUR
+Mendoza,,11.00,EUR
+Captain Morgan,4CL,7.50,EUR
+Bacardi,4CL,7.50,EUR
+Diplomatico Reserva Exclusiva,4CL,9.00,EUR
+Clement Shrubb,4CL,8.50,EUR
+Don Papa Baroko,4CL,9.00,EUR
+Kraken Spiced,4CL,8.50,EUR
+Plantation Pineapple,4CL,9.50,EUR
+Zacapa Guatemala 23 Ans,4CL,11.00,EUR
+Bear Brothers Bio Gin,4CL,8.00,EUR
+Bear Brothers Bio Rampoule Gin,4CL,9.00,EUR
+Bombay Sapphire Gin,4CL,8.50,EUR
+Tanqueray Gin,4CL,8.50,EUR
+Altitude Gin,4CL,9.00,EUR
+Generation Pink Gin,4CL,9.00,EUR
+Hendrick's Gin,4CL,10.00,EUR
+Ballantines,4CL,8.00,EUR
+Jameson,4CL,8.50,EUR
+Chivas 12 Ans,4CL,9.50,EUR
+Aberlour,4CL,10.00,EUR
+Tequila Paf,,4.50,EUR
+Tequila Cuervo,4CL,8.50,EUR
+Tequila Reposado 1800,4CL,9.00,EUR
+Vodka Eristoff,4CL,8.00,EUR
+Vodka 42 Below (Energy Drink),4CL,9.00,EUR
+Jäger,2CL,3.50,EUR
+Jägerbomb,,6.50,EUR
+Génépi des Alpes,4CL,5.00,EUR
+Malibu,4CL,6.50,EUR
+Baileys,4CL,6.50,EUR
+Get 27,4CL,6.50,EUR
+Get 31,4CL,6.50,EUR
+Limoncello,4CL,5.00,EUR
+Cognac,4CL,7.00,EUR
+Amaretto,4CL,7.00,EUR
+Cointreau,4CL,7.00,EUR
+Chartreuse,4CL,7.50,EUR
+Liqueur de Poire,4CL,7.00,EUR
+Liqueur de Framboise,4CL,7.00,EUR
+"IGP Val de Loire, ""Le Petit Mont""",12CL,4.50,EUR
+"IGP Val de Loire, ""Le Petit Mont""",75CL,21.00,EUR
+"AOP Vin de Savoie, Apremont",12CL,5.00,EUR
+"AOP Vin de Savoie, Apremont",75CL,25.00,EUR
+"IGP Cotes de Gascogne, ""Noisette"" Bio",12CL,5.50,EUR
+"IGP Cotes de Gascogne, ""Noisette"" Bio",75CL,28.00,EUR
+AOP Alsace Cuvée Tout Schuss,12CL,5.50,EUR
+AOP Alsace Cuvée Tout Schuss,75CL,27.00,EUR
+AOC Chablis Domaine Hamelin,75CL,35.00,EUR
+"IGP Pays d'Oc, ""Moments de Plaisir""",12CL,4.50,EUR
+"IGP Pays d'Oc, ""Moments de Plaisir""",75CL,21.00,EUR
+"IGP Alpes de Haute-Provence ""Myst""",12CL,5.50,EUR
+"IGP Alpes de Haute-Provence ""Myst""",75CL,26.00,EUR
+"AOP Côtes de Provence ""M de Minuty""",12CL,6.50,EUR
+"AOP Côtes de Provence ""M de Minuty""",75CL,33.00,EUR
+"AOP Côtes de Provence ""M de Minuty""",150CL,65.00,EUR
+"AOP Côtes du Rhône, Le Coq Volant",12CL,4.50,EUR
+"AOP Côtes du Rhône, Le Coq Volant",75CL,23.00,EUR
+"IGP Syrah ""Marcel""",12CL,5.00,EUR
+"IGP Syrah ""Marcel""",75CL,25.00,EUR
+"AOP Pic Saint Loup, Lambrusques",12CL,5.50,EUR
+"AOP Pic Saint Loup, Lambrusques",75CL,28.00,EUR
+AOC Montagne St Emilion Chateau Guilbot La Tour,75CL,35.00,EUR
+AOC Bourgogne Hautes Côtes de Beaune,75CL,39.00,EUR
+"AOP Morgon ""Les Charmes""",75CL,40.00,EUR
+"Malbec, Domaine Peralta",12CL,5.50,EUR
+"Malbec, Domaine Peralta",75CL,28.00,EUR
+"Valpolicella Classico, Campagnola La Bine",12CL,5.00,EUR
+"Valpolicella Classico, Campagnola La Bine",75CL,25.00,EUR
+"Prosecco, Rocca Cerrina",12CL,7.00,EUR
+"Prosecco, Rocca Cerrina",75CL,35.00,EUR
+Champagne Montaudon Cuvée M,75CL,65.00,EUR

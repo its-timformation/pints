@@ -226,7 +226,7 @@ export default function BarDetail() {
                         <li key={drink.id} className="hairline-b-soft last:border-b-0 py-4 px-5 flex items-center gap-3">
                           <span className="num-rail text-[var(--color-blaze)] w-6 shrink-0">{String(i+1).padStart(2,"0")}</span>
                           <div className="flex-1 min-w-0">
-                            <div className="font-display text-base uppercase text-[var(--color-paper)]">{drink.name}</div>
+                            <div className="font-display text-base uppercase text-[var(--color-paper)] leading-snug mb-0.5">{drink.name}</div>
                             <div className="text-meta opacity-60 mt-0.5 flex items-center gap-2 flex-wrap">
                               {drink.size && <span>{drink.size.toUpperCase()}</span>}
                               {verified && !stale && <span className="verified-pill">VERIFIED</span>}

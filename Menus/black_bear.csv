@@ -1,0 +1,234 @@
+name,size,price,currency
+Peroni,25cl,4.00,EUR
+Peroni,50cl,7.50,EUR
+Mont-Blanc IPA,25cl,5.00,EUR
+Mont-Blanc IPA,50cl,9.00,EUR
+London Pale Ale,25cl,5.00,EUR
+London Pale Ale,50cl,9.00,EUR
+Hoegaarden,25cl,5.00,EUR
+Hoegaarden,50cl,9.00,EUR
+Guinness,25cl,5.00,EUR
+Guinness,50cl,9.00,EUR
+Guinness Hop House 13,25cl,5.00,EUR
+Guinness Hop House 13,50cl,9.00,EUR
+St Stefanus,25cl,5.00,EUR
+St Stefanus,50cl,9.00,EUR
+Grolsh,25cl,4.00,EUR
+Grolsh,50cl,7.00,EUR
+Panaché ou Monaco,25cl,3.50,EUR
+Panaché ou Monaco,50cl,7.00,EUR
+Picon B Picon Bière,25cl,5.00,EUR
+Picon B Picon Bière,50cl,9.00,EUR
+Mont-Blanc Bleue,25cl,5.00,EUR
+Mont-Blanc Bleue,50cl,9.00,EUR
+Cidre Pression Magners,25cl,4.50,EUR
+Cidre Pression Magners,50cl,9.00,EUR
+Molson,33cl,7.00,EUR
+Mooshead,33cl,7.00,EUR
+La Maudite,34cl,9.00,EUR
+Fin Du Monde,34cl,9.00,EUR
+St Ambroise à l'Érable,34cl,9.00,EUR
+St Ambroise à l'Abricot,34cl,9.00,EUR
+La Blanche Cheval Blanc,34cl,9.00,EUR
+San Miguel,33cl,7.00,EUR
+Paix Dieu,33cl,8.50,EUR
+Mort Subite Kriek Cerise,25cl,7.50,EUR
+Duvel,33cl,8.00,EUR
+Delirium Tremens,33cl,8.00,EUR
+Kwak,33cl,8.00,EUR
+Mont-Blanc Rousse,33cl,7.50,EUR
+Chouffe,33cl,8.00,EUR
+Tripel Karmeliet,33cl,8.00,EUR
+Budweiser,33cl,7.00,EUR
+Corona,33cl,7.50,EUR
+Desperados,33cl,7.50,EUR
+Virgin Desperados,33cl,7.00,EUR
+Corona Zero,33cl,7.00,EUR
+Heineken Zero,33cl,7.00,EUR
+Guinness 0.0,50cl,9.00,EUR
+IGP Uby - Domaine Colombard,Verre,4.50,EUR
+IGP Uby - Domaine Colombard,75cl,22.00,EUR
+IGP Chardonnay - Les Jamelles,75cl,28.00,EUR
+AOP Apremont - Entre Lac et Sommets,75cl,27.00,EUR
+IGP Gourmandise Mediterrannée,Verre,4.50,EUR
+IGP Gourmandise Mediterrannée,75cl,22.00,EUR
+Whispering Angel,Verre,6.00,EUR
+Whispering Angel,75cl,40.00,EUR
+Rock Angel,75cl,55.00,EUR
+AOP Côtes du Rhône - Domaine Dionysos,Verre,4.50,EUR
+AOP Côtes du Rhône - Domaine Dionysos,75cl,22.00,EUR
+AOP Vacqueyras - Château de Haute Ribes,75cl,28.00,EUR
+IGP Pinot Noir - Les Jamelles,Verre,4.50,EUR
+IGP Pinot Noir - Les Jamelles,75cl,22.00,EUR
+AOP Côteaux Bourguignon - Cuvée Caprice,Verre,4.50,EUR
+AOP Côteaux Bourguignon - Cuvée Caprice,75cl,22.00,EUR
+AOC Saint-Émilion - Château Chapelle La Rose Lussac,Verre,5.50,EUR
+AOC Saint-Émilion - Château Chapelle La Rose Lussac,75cl,28.00,EUR
+Argentine - 1492 Don Cristobal,75cl,25.00,EUR
+Espagne - Rioja Campo Viejo,75cl,28.00,EUR
+Kir,,4.00,EUR
+Kir Prosecco,,7.00,EUR
+Kir Royal,,10.00,EUR
+Coupe de Prosecco,,6.50,EUR
+Coupe de Champagne,,9.50,EUR
+Porto,,4.00,EUR
+Campari,,4.00,EUR
+Lillet Rosé,,4.00,EUR
+Martini (Blanc ou Rouge),,5.00,EUR
+Suze,,5.00,EUR
+Ricard,4cl,5.00,EUR
+Casanis,4cl,5.00,EUR
+Pastis,4cl,5.00,EUR
+Martini Gin,,8.00,EUR
+Americano Maison,,7.50,EUR
+Negroni,,9.00,EUR
+Apérol Spritz,,9.00,EUR
+Limoncello Spritz,,9.00,EUR
+Campari Spritz,,9.00,EUR
+Hugo Spritz,,11.00,EUR
+Moscow Mule,,12.00,EUR
+London Mule,,12.00,EUR
+Carribean Mule,,12.00,EUR
+Mexican Mule,,12.00,EUR
+Canadian Mule,,12.00,EUR
+Whisky Sour,,13.00,EUR
+Amaretto Sour,,12.00,EUR
+White Russian,,9.00,EUR
+Bloody Mary,,11.00,EUR
+Sex On The Beach,,14.00,EUR
+Cosmopolitan,,14.00,EUR
+Espresso Martini,,14.00,EUR
+Blueberry Puff,,14.00,EUR
+Kiwizz,,10.00,EUR
+Gin Fizz,,14.00,EUR
+Long Island,,15.00,EUR
+Bramble,,13.00,EUR
+Gin Garden,,14.00,EUR
+Purple Snow,,14.00,EUR
+Margarita,,13.00,EUR
+Tequila Sunrise,,12.00,EUR
+Purple Margarita,,12.00,EUR
+Black Bear,,14.00,EUR
+Malibu Beach,,13.00,EUR
+Porn Star Martini,,14.00,EUR
+French 75,,14.00,EUR
+Nos Regrets,,14.00,EUR
+Ti-Punch,,8.00,EUR
+Caipirinha,,8.00,EUR
+Caipiroska,,8.00,EUR
+Cuba Libre,,9.00,EUR
+Mojito Classique,,10.00,EUR
+"Mojito (Mangue, Passion ou Fraise)",,12.00,EUR
+Mojito Champagne,,13.00,EUR
+Black Pearl,,14.00,EUR
+Planteur,,14.00,EUR
+Pina Colada,,13.00,EUR
+Daïquiri Fraise,,13.00,EUR
+Dark'N'Storm,,13.00,EUR
+Maï Taï,,14.00,EUR
+Vodka,,8.00,EUR
+Get 27,,8.00,EUR
+Get 31,,8.00,EUR
+Malibu,,8.00,EUR
+Passoa,,8.00,EUR
+Southern Comfort,,8.50,EUR
+Vodka Red Bull,25cl,9.00,EUR
+Vodka Belvédère,,11.00,EUR
+JB,4cl,8.00,EUR
+Jack Daniel's Classic,4cl,8.50,EUR
+Jack Daniel's Honey,4cl,8.50,EUR
+Jack Daniel's Fire,4cl,8.50,EUR
+Jack Daniel's Pomme,4cl,8.50,EUR
+Jack Daniel's Single Jack,4cl,13.00,EUR
+Jack Daniel's Gentleman Jack,4cl,13.00,EUR
+Four Roses,4cl,9.00,EUR
+Jameson,4cl,9.00,EUR
+Black Label,4cl,10.00,EUR
+Aberlour (10 Ans),4cl,10.00,EUR
+Chivas (12 Ans),4cl,10.00,EUR
+Sortilège Érable,4cl,9.00,EUR
+Bushmills,4cl,11.00,EUR
+Glenlivet,4cl,11.00,EUR
+Cardhu (12 Ans),4cl,11.00,EUR
+Singleton,4cl,11.00,EUR
+Talisker,4cl,13.00,EUR
+Oban (14 Ans),4cl,13.00,EUR
+Woodford Bourbon,4cl,13.00,EUR
+Wild North,4cl,11.00,EUR
+Sortilège Prestige 7 Ans,4cl,13.00,EUR
+Havana,4cl,8.00,EUR
+Bacardi,4cl,8.00,EUR
+Captain Morgan,4cl,8.00,EUR
+Kraken,4cl,8.50,EUR
+Havana Especial,4cl,8.50,EUR
+Diplomatico,4cl,12.00,EUR
+Don Papa,4cl,12.00,EUR
+Pacto Navio,4cl,12.00,EUR
+Eminente (12 Ans),4cl,12.00,EUR
+Zacapa (23 Ans),4cl,14.00,EUR
+Don Papa (10 Ans),4cl,14.00,EUR
+Chic/Choc,4cl,9.00,EUR
+Rhum Arrangé Passion/Vanille,4cl,9.00,EUR
+Rhum Arrangé Banane/Café/Vanille,4cl,9.00,EUR
+Rhum Arrangé À L'Orange Les Pirateries,4cl,10.00,EUR
+Tanqueray,4cl,8.00,EUR
+Gordon's Pink,4cl,8.50,EUR
+Bombay,4cl,8.50,EUR
+Bombay Bramble Blackberry & Raspberry,4cl,9.00,EUR
+Roku Gin,4cl,10.00,EUR
+Citadelle,4cl,10.00,EUR
+Hendrick's,4cl,11.00,EUR
+4810 Mont Blanc,4cl,11.00,EUR
+Ungawa,4cl,10.00,EUR
+Tanqueray Sevilla,4cl,11.00,EUR
+Plymouth,4cl,12.00,EUR
+Botanist,4cl,12.00,EUR
+Saint Laurent,4cl,10.00,EUR
+Tanqueray N°10,4cl,13.00,EUR
+B52,,4.50,EUR
+Nicky Larson,,4.00,EUR
+Killer Passion,,4.00,EUR
+Kiss Cool,,4.00,EUR
+Tequila (Shots),,4.00,EUR
+Sambuca,,4.00,EUR
+Baby Guinness,,4.00,EUR
+Orgasme,,4.00,EUR
+Blow Job,,4.00,EUR
+Cervelle De Singe,,4.00,EUR
+Alien,,4.00,EUR
+Flatliner,,4.00,EUR
+Vodka Caramel,,4.00,EUR
+Shit On The Grass,,4.00,EUR
+BMW,,4.00,EUR
+Madeleine,,4.00,EUR
+P'ti Savoyard,,4.00,EUR
+Jagermeister,,4.00,EUR
+Jagerbomb,,6.50,EUR
+Irish Grenade,,8.00,EUR
+Fireball,,4.00,EUR
+Firebomb,,6.50,EUR
+Brandy,,8.00,EUR
+Amaretto,,8.00,EUR
+Bailey's,,8.00,EUR
+Manzana,,8.00,EUR
+Limoncello,,8.00,EUR
+Cointreau,,8.00,EUR
+Grand Marnier,,8.00,EUR
+Get27 (Digestif),,8.00,EUR
+Get31 (Digestif),,8.00,EUR
+Sortilège Crème d'Érable,,8.00,EUR
+Poire,,9.00,EUR
+Génépi,,9.00,EUR
+Armagnac,,9.00,EUR
+Calvados,,9.00,EUR
+Chartreuse,,9.00,EUR
+Cognac Hennessy,,10.00,EUR
+Cognac Hennessy XO,,20.00,EUR
+Coupe de Prosecco,,6.50,EUR
+Coupe de Champagne,,9.50,EUR
+Bouteille Prosecco,70cl,35.00,EUR
+Bouteille AOP Moët&Chandon Brut,70cl,85.00,EUR
+Bouteille Veuve Clicquot Brut,70cl,90.00,EUR
+Magnum AOP Moët&Chandon Brut,150cl,175.00,EUR
+Magnum Veuve Clicquot Brut,150cl,190.00,EUR
+Bouteille Dom Pérignon,70cl,230.00,EUR
