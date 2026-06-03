@@ -168,7 +168,7 @@ export function GuinnessSheet({ open, onClose }: Props) {
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <div className="font-display text-base uppercase truncate">
+                        <div className="font-display text-base uppercase">
                           {bar.name}
                         </div>
                         <div className="text-meta opacity-55 mt-0.5 flex items-center gap-1.5">
