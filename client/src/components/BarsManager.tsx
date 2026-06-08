@@ -43,7 +43,7 @@ function SectionHeading({ groupKey, count }: { groupKey: string; count: number }
 
 
 /* ── AddBarForm ──────────────────────────────────────────────── */
-function AddBarForm({ onCreated }: { onCreated: () => void }) {
+function AddBarForm({ onCreated, areas }: { onCreated: () => void; areas: string[] }) {
   const createBar = trpc.admin.createBar.useMutation({ onSuccess: () => { onCreated(); setForm(BLANK); setOpen(false); } });
   const resolveMap = trpc.admin.resolveMapLink.useMutation();
   const [open, setOpen] = useState(false);
@@ -152,7 +152,7 @@ function AddBarForm({ onCreated }: { onCreated: () => void }) {
         <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
           placeholder="Bar name" className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px]" />
 
-        <AreaTypeahead value={form.area} onChange={v => setForm({ ...form, area: v })} />
+        <AreaCombo value={form.area} onChange={v => setForm({ ...form, area: v })} areas={areas} />
 
         <div className="flex gap-2">
           <div className="flex-1">
@@ -323,7 +323,7 @@ export default function BarsManager({ onBack }: Props) {
       </section>
 
       {/* Add new bar */}
-      <AddBarForm onCreated={refetch} />
+      <AddBarForm onCreated={refetch} areas={uniqueAreas} />
 
       {/* Search + typeahead */}
       <div className="px-3 mb-2" ref={searchRef}>
@@ -510,7 +510,7 @@ export default function BarsManager({ onBack }: Props) {
               </div>
               {expandedBar === bar.id && (
                 <div className="p-3 border-t border-[var(--color-rule)] bg-[var(--color-ink-card)] bg-opacity-50">
-                  <BarDetailsEditor barId={bar.id} barData={bar} onUpdate={refetch} />
+                  <BarDetailsEditor barId={bar.id} barData={bar} onUpdate={refetch} areas={uniqueAreas} />
                 </div>
               )}
             </div>
@@ -533,55 +533,58 @@ const TIME_OPTIONS = Array.from({ length: 96 }, (_, i) => {
   return `${h}:${m}`;
 });
 
-const ALL_AREAS = [
-  "Morzine", "Les Gets", "Avoriaz", "Montriond",
-  "Châtel", "Morgins", "Champéry", "Les Crosets",
-  "Champoussin", "St Jean d'Aulps", "Abondance",
-  "La Chapelle d'Abondance", "Torgon", "Val-d'Illiez", "Ardent"
-];
+/* ── AreaCombo ───────────────────────────────────────────────── */
+function AreaCombo({ value, onChange, areas }: { value: string; onChange: (v: string) => void; areas: string[] }) {
+  const [mode, setMode] = useState<'select' | 'custom'>(
+    value && !areas.includes(value) ? 'custom' : 'select'
+  );
 
-/* ── AreaTypeahead ───────────────────────────────────────────── */
-function AreaTypeahead({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [query, setQuery] = useState(value);
-  const [open, setOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const filtered = ALL_AREAS.filter(a => a.toLowerCase().includes(query.toLowerCase()));
+  if (mode === 'select') {
+    return (
+      <select
+        value={value || ''}
+        onChange={e => {
+          if (e.target.value === '__new__') {
+            setMode('custom');
+            onChange('');
+          } else {
+            onChange(e.target.value);
+          }
+        }}
+        className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-[var(--color-paper)]"
+      >
+        <option value="" className="bg-[var(--color-ink)]">Select area…</option>
+        {areas.map(a => (
+          <option key={a} value={a} className="bg-[var(--color-ink)]">{a}</option>
+        ))}
+        <option value="__new__" className="bg-[var(--color-ink)]">+ Enter new area…</option>
+      </select>
+    );
+  }
 
   return (
-    <div className="relative" ref={wrapperRef}>
+    <div className="flex gap-2">
       <input
-        value={query}
-        onChange={e => { setQuery(e.target.value); setOpen(true); onChange(e.target.value); }}
-        onFocus={() => setOpen(true)}
-        className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2 text-[var(--color-paper)]"
-        placeholder="Area"
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder="New area name (e.g. Les Lindarets)"
+        autoFocus
+        className="flex-1 bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-2.5 min-h-[44px] text-[var(--color-paper)]"
       />
-      {open && filtered.length > 0 && (
-        <ul className="absolute z-30 left-0 right-0 bg-[var(--color-ink)] border border-[var(--color-rule)] max-h-40 overflow-y-auto">
-          {filtered.map(a => (
-            <li key={a}>
-              <button onClick={() => { setQuery(a); onChange(a); setOpen(false); }} className="w-full text-left px-3 py-2.5 min-h-[44px] hover:bg-[var(--color-ink-card)]">
-                <span className="text-meta">{a.toUpperCase()}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <button
+        type="button"
+        onClick={() => setMode('select')}
+        className="text-meta opacity-60 hover:opacity-100 px-3 border border-[var(--color-rule)]"
+      >
+        ← LIST
+      </button>
     </div>
   );
 }
 
 /* ── BarDetailsEditor ────────────────────────────────────────── */
-function BarDetailsEditor({ barId, barData, onUpdate }: { barId: number; barData: any; onUpdate: () => void }) {
+function BarDetailsEditor({ barId, barData, onUpdate, areas }: { barId: number; barData: any; onUpdate: () => void; areas: string[] }) {
   const { data: barDetails, refetch } = trpc.bars.getById.useQuery({ id: barId });
   const utils = trpc.useUtils();
   const deleteDrink = trpc.admin.deleteDrink.useMutation({ onSuccess: () => refetch() });
@@ -751,7 +754,7 @@ Output as a downloadable .csv file named after the bar.`;
           <div className="space-y-2">
             <input value={barForm.name} onChange={e => setBarForm({ ...barForm, name: e.target.value })}
               className="w-full bg-[var(--color-ink-card)] border border-[var(--color-rule)] px-3 py-3 min-h-[44px]" placeholder="Name" />
-            <AreaTypeahead value={barForm.area || ""} onChange={v => setBarForm({ ...barForm, area: v })} />
+            <AreaCombo value={barForm.area || ""} onChange={v => setBarForm({ ...barForm, area: v })} areas={areas} />
             <div className="flex gap-2">
               <div className="flex-1">
                 <div className="text-meta opacity-60 mb-1">OPENS</div>

@@ -44,6 +44,13 @@ export default function ListPage() {
     setQuery(state.query);
   }, []);
 
+  const areas = useMemo(() => {
+    if (!barsWithDetails) return [];
+    return [...new Set(barsWithDetails.map(b => b.area).filter(Boolean))].sort() as string[];
+  }, [barsWithDetails]);
+
+  const [filterArea, setFilterArea] = useState('');
+
   const enriched = useMemo(() => {
     if (!barsWithDetails) return [];
     const now = new Date();
@@ -91,7 +98,8 @@ export default function ListPage() {
     if (openOnly) list = list.filter(b => b.openState.open);
     if (happyOnly) list = list.filter(b => b.hasActiveHappy);
     if (guinnessOnly) list = list.filter(b => b.servesGuinness);
-    if (areaFilter) list = list.filter(b => b.area === areaFilter);
+    if (filterArea) list = list.filter(b => b.area === filterArea);
+    else if (areaFilter) list = list.filter(b => b.area === areaFilter);
 
     list.sort((a, b) => {
       if (sort === "price") {
@@ -103,7 +111,7 @@ export default function ListPage() {
       return a.name.localeCompare(b.name);
     });
     return list;
-  }, [enriched, query, openOnly, happyOnly, guinnessOnly, areaFilter, sort]);
+  }, [enriched, query, openOnly, happyOnly, guinnessOnly, areaFilter, filterArea, sort]);
 
   if (isLoading) return <LoadingMessage surface="list" />;
 
@@ -133,6 +141,35 @@ export default function ListPage() {
           </button>
         ))}
       </div>
+
+      {/* Area filter pills */}
+      {areas.length > 0 && (
+        <div className="overflow-x-auto scrollbar-hide pb-3">
+          <div className="flex gap-1.5 px-4 min-w-max">
+            {filterArea && (
+              <button
+                onClick={() => setFilterArea('')}
+                className="px-3 py-1.5 text-meta border bg-[var(--color-blaze)] text-[var(--color-paper)] border-[var(--color-blaze)] whitespace-nowrap"
+              >
+                ✕ CLEAR
+              </button>
+            )}
+            {areas.map(area => (
+              <button
+                key={area}
+                onClick={() => setFilterArea(filterArea === area ? '' : area)}
+                className={`px-3 py-1.5 text-meta border transition-colors whitespace-nowrap ${
+                  filterArea === area
+                    ? 'bg-[var(--color-blaze)] text-[var(--color-paper)] border-[var(--color-blaze)]'
+                    : 'border-[var(--color-rule)] opacity-70'
+                }`}
+              >
+                {area.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* List */}
       {filtered.length === 0 && (
