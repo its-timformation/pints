@@ -2,8 +2,11 @@ import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from "re
 import { useEffect, useState } from "react";
 import { useAppStore } from "./lib/store";
 import { APP_VERSION } from './lib/version';
+import { usePwaInstall } from './lib/usePwaInstall';
 import { PinSentry } from "./components/PinSentry";
 import { BuildNotification } from "./components/BuildNotification";
+import { InstallBanner } from "./components/InstallBanner";
+import { InstallButton } from "./components/InstallButton";
 
 import Dashboard from "./pages/Dashboard";
 import MapPage from "./pages/MapPage";
@@ -67,7 +70,12 @@ function TickerBand({ adminActive, onAdminTap }: { adminActive: boolean; onAdmin
 }
 
 /* ---------------------- HEADER ---------------------- */
-function Header({ onWordmarkTap }: { onWordmarkTap: () => void; }) {
+function Header({ onWordmarkTap, showInstall, installState, onInstall }: {
+  onWordmarkTap: () => void;
+  showInstall: boolean;
+  installState: 'installable' | 'ios' | 'unsupported' | 'installed';
+  onInstall: () => void;
+}) {
   const { currency, setCurrency, stoutsMode } = useAppStore();
   const navigate = useNavigate();
   return (
@@ -78,7 +86,10 @@ function Header({ onWordmarkTap }: { onWordmarkTap: () => void; }) {
             {stoutsMode ? "STOUTS" : "PINTS"}<span className="text-[var(--color-blaze)]">·</span>DU<span className="text-[var(--color-blaze)]">·</span>SOLEIL
           </span>
         </button>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          {showInstall && (installState === 'installable' || installState === 'ios') && (
+            <InstallButton state={installState} onInstall={onInstall} />
+          )}
           <select
             value={currency}
             onChange={(e) => setCurrency(e.target.value as any)}
@@ -146,6 +157,10 @@ function Shell() {
   const navigate = useNavigate();
   const location = useLocation();
   const { enterStoutsMode, exitStoutsMode, stoutsExpires, stoutsMode } = useAppStore();
+
+  const { state: installState, triggerInstall, bannerDismissed, dismissBanner } = usePwaInstall();
+  const showBanner = !bannerDismissed && (installState === 'installable' || installState === 'ios');
+  const showInstall = installState === 'installable' || installState === 'ios';
 
   const [showSentry, setShowSentry] = useState(false);
   const [adminActive, setAdminActive] = useState(() => hasAdminSession());
@@ -221,7 +236,12 @@ function Shell() {
     <>
       <div className="fixed top-0 left-0 right-0 z-50">
         <TickerBand adminActive={adminActive} onAdminTap={onAdminTap} />
-        <Header onWordmarkTap={onWordmarkTap} />
+        <Header
+          onWordmarkTap={onWordmarkTap}
+          showInstall={showInstall}
+          installState={installState}
+          onInstall={() => installState === 'ios' ? undefined : triggerInstall()}
+        />
       </div>
 
       <main
@@ -243,6 +263,14 @@ function Shell() {
           <Route path="/live" element={<LiveNow />} />
         </Routes>
       </main>
+
+      {!isFullScreenPage && showBanner && (
+        <InstallBanner
+          state={installState as 'installable' | 'ios'}
+          onInstall={triggerInstall}
+          onDismiss={dismissBanner}
+        />
+      )}
 
       {!isFullScreenPage && (
         <div className="fixed bottom-0 left-0 right-0 z-50">
